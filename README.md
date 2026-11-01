@@ -2,7 +2,7 @@
 
 Lista de compras compartilhada entre o comprador e seus clientes.
 
-- **Painel do comprador**: `https://yggnus77.github.io/smart-compras/` (entrar / criar conta)
+- **Painel do comprador**: `https://yggnus77.github.io/Smart-Compras/` (entrar / criar conta)
 - **Link do cliente**: `?c=<usuario>` — o cliente preenche nome, local/garimpo, data, telefone e os itens
 - **Lista do cliente**: `?l=<token>` — acompanha a compra, adiciona itens (o comprador recebe alerta) e vê o relatório final
 
