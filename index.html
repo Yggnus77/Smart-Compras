@@ -35,6 +35,11 @@ header.top h1 img{width:34px;height:34px;border-radius:9px;box-shadow:0 0 0 1px 
 header.top h1 b{color:var(--gold)}
 body.login{background:#071433 url(img/fundo-m.jpg) center/cover no-repeat fixed}
 @media (min-width:700px){body.login{background-image:url(img/fundo.jpg)}}
+body.fundo{background:linear-gradient(rgba(5,12,32,.84),rgba(5,12,32,.9)),url(img/fundo-m.jpg) center/cover no-repeat fixed;background-color:#071433}
+@media (min-width:700px){body.fundo{background-image:linear-gradient(rgba(5,12,32,.84),rgba(5,12,32,.9)),url(img/fundo.jpg)}}
+body.fundo .wrap>h2,body.fundo .wrap>p,body.fundo .wrap>p a{color:#fff}
+body.fundo,body.login{min-height:100vh}
+body.fundo .search .btn.ghost{background:var(--card)}
 body.login main{min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center}
 body.login .card{background:rgba(255,255,255,.96);color:#16211f;border:1px solid rgba(242,183,5,.6);box-shadow:0 20px 50px rgba(0,0,0,.45)}
 body.login .card input{background:#fff;color:#16211f;border-color:#d5dae6}
@@ -530,7 +535,11 @@ function telaLogin(){
   }
   render();
 }
-function sair(){ store.del("sc_sessao"); SESS = null; clearInterval(pollTimer); pollTimer = null; location.hash = ""; telaLogin(); }
+async function sairPush(){
+  try{ if(!pushSuportado() || !SESS) return; const reg = await navigator.serviceWorker.getRegistration(); const sub = reg && await reg.pushManager.getSubscription();
+    if(sub){ await rpc("sc_remover_push", {p_chave: SESS.chave, p_endpoint: sub.endpoint}).catch(()=>{}); await sub.unsubscribe(); } store.del("sc_push_ok"); }catch(e){}
+}
+function sair(){ sairPush(); store.del("sc_sessao"); SESS = null; clearInterval(pollTimer); pollTimer = null; location.hash = ""; telaLogin(); }
 
 function topComprador(){
   const n = PAINEL ? PAINEL.alertas.length : 0;
@@ -577,7 +586,32 @@ function iniciarPoll(){
   }, POLL_MS);
 }
 
-let busca = "", instalarEvt = null;
+let busca = "", instalarEvt = null, pushSincronizado = false;
+const PUSH_URL = `${SUPABASE_URL}/functions/v1/sc-push`;
+const pushSuportado = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+const ehIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+const instalado = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+function b64u(s){ const p = "=".repeat((4 - s.length % 4) % 4); const r = atob((s + p).replace(/-/g,"+").replace(/_/g,"/")); return Uint8Array.from(r, c => c.charCodeAt(0)); }
+async function ativarPush(interativo){
+  if(!pushSuportado()) return false;
+  if(Notification.permission === "default"){
+    if(!interativo) return false;
+    if(await Notification.requestPermission() !== "granted") return false;
+  }
+  if(Notification.permission !== "granted") return false;
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if(!sub){
+    let r; try{ r = await fetch(PUSH_URL); }catch(e){ r = null; }
+    if(!r || !r.ok) throw new Error("Os alertas no celular ainda não foram configurados no Supabase.");
+    const {publicKey} = await r.json();
+    sub = await reg.pushManager.subscribe({userVisibleOnly: true, applicationServerKey: b64u(publicKey)});
+  }
+  try{ await rpc("sc_salvar_push", {p_chave: SESS.chave, p_sub: sub.toJSON()}); }
+  catch(e){ throw new Error(/sc_salvar_push/.test(e.message) ? "Falta rodar o SQL dos alertas (003_push.sql) no Supabase." : e.message); }
+  store.set("sc_push_ok", SESS.usuario);
+  return true;
+}
 addEventListener("beforeinstallprompt", e => { e.preventDefault(); instalarEvt = e; if(SESS && location.hash === "" && !location.search && $("#lk") && !$("#instalar")) telaPainel(); });
 const norm = t => String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
 async function telaPainel(){
@@ -586,7 +620,9 @@ async function telaPainel(){
   const filtros = {abertas:"Abertas", enviada:"Novas", em_compra:"Em compra", finalizada:"Finalizadas", todas:"Todas"};
   const noFiltro = (l, k) => k==="todas" || (k==="abertas" ? l.status!=="finalizada" : l.status===k);
   const cont = k => L.filter(l => noFiltro(l,k)).length;
-  const notifOk = !("Notification" in window) || Notification.permission !== "default";
+  const pushOk = pushSuportado() ? (Notification.permission === "granted" && store.get("sc_push_ok") === P.comprador.usuario) || Notification.permission === "denied"
+                                  : (!("Notification" in window) || Notification.permission !== "default");
+  if(!pushSincronizado && pushSuportado() && store.get("sc_push_ok") === P.comprador.usuario){ pushSincronizado = true; ativarPush(false).catch(()=>{}); }
   app.innerHTML = `
     <h2 style="margin-top:8px">Olá, ${esc(P.comprador.nome)}</h2>
     <div class="card">
@@ -594,7 +630,7 @@ async function telaPainel(){
       <p class="small muted" style="margin-top:0">Envie este link. Cada cliente preenche os dados e os itens, e a lista chega aqui.</p>
       <div class="linkbox"><input readonly value="${esc(linkCliente(P.comprador.usuario))}" id="lk"><button class="btn sec" id="cp">Copiar</button></div>
       <div class="btns"><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent("Faça sua lista de compras por aqui: " + linkCliente(P.comprador.usuario))}">Enviar pelo WhatsApp</a>
-      ${notifOk ? "" : `<button class="btn ghost" id="notif">🔔 Ativar notificações</button>`}
+      ${pushOk ? "" : `<button class="btn ghost" id="notif">🔔 Ativar alertas no celular</button>`}
       ${instalarEvt ? `<button class="btn ghost" id="instalar">📲 Instalar app</button>` : ""}</div>
     </div>
     ${P.alertas.length ? `<div class="card" style="border-color:var(--warn)"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
@@ -624,7 +660,16 @@ async function telaPainel(){
   renderListas();
   $("#busca").oninput = e => { busca = e.target.value; renderListas(); };
   $("#cp").onclick = () => copiar(linkCliente(P.comprador.usuario));
-  const nb = $("#notif"); if(nb) nb.onclick = async () => { await Notification.requestPermission(); telaPainel(); };
+  const nb = $("#notif"); if(nb) nb.onclick = async () => {
+    if(ehIOS() && !instalado()){ toast("No iPhone: toque em Compartilhar → Adicionar à Tela de Início, abra o app instalado e ative os alertas por lá.", {ms:9000}); return; }
+    if(!pushSuportado()){ await Notification.requestPermission(); return telaPainel(); }
+    busy(nb, true, "Ativando...");
+    try{
+      if(await ativarPush(true)) toast("Alertas ativados! Você será avisado mesmo com o painel fechado.", {ms:6000});
+      else toast("As notificações foram bloqueadas. Libere nas configurações do navegador.", {err:1, ms:7000});
+    }catch(e){ toast(e.message, {err:1, ms:7000}); }
+    telaPainel();
+  };
   const ib = $("#instalar"); if(ib) ib.onclick = async () => { instalarEvt.prompt(); await instalarEvt.userChoice.catch(()=>{}); instalarEvt = null; telaPainel(); };
   app.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { filtro = b.dataset.f; busca = ""; store.set("sc_filtro", filtro); telaPainel(); });
   app.querySelectorAll(".alertlist [data-l]").forEach(c => c.onclick = () => location.hash = "lista/" + c.dataset.l);
@@ -801,11 +846,12 @@ async function telaListaComprador(id, modoRel){
 
 /* ====== roteamento ====== */
 async function rotear(semRolar){
-  document.body.classList.remove("login");
+  document.body.classList.remove("login", "fundo");
   const q = new URLSearchParams(location.search);
   if(q.get("c")) return telaNovaLista(q.get("c"));
   if(q.get("l")) return telaListaCliente(q.get("l"));
   if(!SESS) return telaLogin();
+  document.body.classList.add("fundo");
   if(!PAINEL) await atualizarPainel();
   if(!SESS) return;
   iniciarPoll();
