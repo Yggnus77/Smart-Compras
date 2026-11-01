@@ -3,28 +3,43 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0f766e">
+<meta name="theme-color" content="#0a1a40">
 <title>Smart Compras</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f766e'/%3E%3Cpath d='M16 20h5l5 22h18l4-15H24' stroke='white' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='28' cy='49' r='3' fill='white'/%3E%3Ccircle cx='42' cy='49' r='3' fill='white'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="img/icon-32.png">
+<link rel="apple-touch-icon" href="img/icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Smart Compras">
+<meta name="description" content="Sistema de lista de compras compartilhada entre comprador e clientes.">
 <style>
 :root{
-  --bg:#f4f6f5;--card:#fff;--ink:#16211f;--muted:#5f6d6a;--line:#e1e6e4;
-  --pri:#0f766e;--pri-ink:#fff;--pri-soft:#e3f3f1;
+  --bg:#f3f5fa;--card:#fff;--ink:#16211f;--muted:#5f6d6a;--line:#e1e6e4;
+  --pri:#1d4ed8;--pri-ink:#fff;--pri-soft:#e7eefd;--gold:#f2b705;--navy:#0a1a40;
   --ok:#15803d;--ok-soft:#e5f6ea;--bad:#b42318;--bad-soft:#fdecea;--warn:#b45309;--warn-soft:#fff4e0;
   --radius:14px;--shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
 }
 @media (prefers-color-scheme: dark){
-  :root{--bg:#0f1514;--card:#18201f;--ink:#e7eeec;--muted:#9aa9a6;--line:#2a3533;
-  --pri:#2bb3a6;--pri-ink:#062320;--pri-soft:#173532;--ok:#4ade80;--ok-soft:#163423;--bad:#f87171;--bad-soft:#3a1d1b;--warn:#fbbf24;--warn-soft:#3a2d12;
+  :root{--bg:#0b1020;--card:#141b2e;--ink:#e8ecf5;--muted:#9aa5bd;--line:#26304a;
+  --pri:#6d9bff;--pri-ink:#071330;--pri-soft:#18264a;--gold:#f5c542;--navy:#0a1a40;--ok:#4ade80;--ok-soft:#163423;--bad:#f87171;--bad-soft:#3a1d1b;--warn:#fbbf24;--warn-soft:#3a2d12;
   --shadow:none}
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 a{color:var(--pri)}
 .wrap{max-width:760px;margin:0 auto;padding:16px 16px 96px}
-header.top{position:sticky;top:0;z-index:20;background:var(--pri);color:#fff}
+header.top{position:sticky;top:0;z-index:20;background:linear-gradient(90deg,#071433,#0f2f78);color:#fff;border-bottom:2px solid var(--gold)}
 header.top .in{max-width:760px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:10px}
-header.top h1{font-size:18px;margin:0;flex:1;display:flex;align-items:center;gap:8px;cursor:pointer}
+header.top h1{font-size:18px;margin:0;flex:1;display:flex;align-items:center;gap:10px;cursor:pointer;letter-spacing:.2px}
+header.top h1 img{width:34px;height:34px;border-radius:9px;box-shadow:0 0 0 1px rgba(242,183,5,.6)}
+header.top h1 b{color:var(--gold)}
+body.login{background:#071433 url(img/fundo-m.jpg) center/cover no-repeat fixed}
+@media (min-width:700px){body.login{background-image:url(img/fundo.jpg)}}
+body.login main{min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center}
+body.login .card{background:rgba(255,255,255,.96);color:#16211f;border:1px solid rgba(242,183,5,.6);box-shadow:0 20px 50px rgba(0,0,0,.45)}
+body.login .card input{background:#fff;color:#16211f;border-color:#d5dae6}
+body.login .muted{color:#5b6478}
+.hero{display:block;width:100%;border-radius:10px;margin:-4px 0 12px;aspect-ratio:16/9;object-fit:cover}
 header.top button{background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:10px;padding:8px 10px;font-size:14px;cursor:pointer;position:relative}
 .bell .n{position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:999px;font-size:11px;min-width:18px;height:18px;line-height:18px;padding:0 5px;font-weight:700}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin:12px 0;box-shadow:var(--shadow)}
@@ -57,6 +72,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--pri);outline-off
 .lcard{display:block;text-decoration:none;color:inherit;cursor:pointer}
 .lcard .t{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
 .lcard .nm{font-weight:700;font-size:17px}
+.lcard{border-left:4px solid var(--pri)}
 .bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:10px;display:flex}
 .bar i{display:block;height:100%}
 .bar .g{background:var(--ok)}.bar .r{background:var(--bad)}
@@ -70,6 +86,15 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--pri);outline-off
 .ib{border:1px solid var(--line);background:var(--card);border-radius:10px;width:46px;height:46px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);flex:none}
 .ib.on-ok{background:var(--ok);border-color:var(--ok);color:#fff}
 .ib.on-bad{background:var(--bad);border-color:var(--bad);color:#fff}
+.obs{font-size:13px;color:var(--muted);margin-top:2px;word-break:break-word}
+.ib.on-warn{background:var(--warn);border-color:var(--warn);color:#fff}
+.item.parcial .p{color:var(--warn)}
+.sub{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 10px}
+.sub label{margin-top:4px}
+.search{margin:8px 0 0}
+.hist td,.hist th{padding:8px 4px;border-bottom:1px solid var(--line);text-align:right;font-size:14px}
+.hist th:first-child,.hist td:first-child{text-align:left}
+.hist{width:100%;border-collapse:collapse}
 .tag{font-size:11px;font-weight:700;background:var(--warn-soft);color:var(--warn);border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:middle;white-space:nowrap}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:15px}
 .kv b{color:var(--muted);font-weight:600}
@@ -127,6 +152,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--pri);outline-off
 const SUPABASE_URL = "https://ivqrabkzdzcgtqkhdrlx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_DbfKnRExNJZIAWLiBTVWbg_uUcTeqUB";
 const POLL_MS = 15000;
+const LOGO = `<img src="img/icon-192.png" alt=""><span>Smart <b>Compras</b></span>`;
 const UNIDADES = ["Unidade","Pacote","Fardo","Saco","Caixa","Kg"];
 
 /* ====== utilidades ====== */
@@ -163,6 +189,20 @@ function fmtUn(q, u){
   if(n === 1 || u === "Kg") return u;
   const pl = {Unidade:"Unidades",Pacote:"Pacotes",Fardo:"Fardos",Saco:"Sacos",Caixa:"Caixas"};
   return pl[u] || u;
+}
+const FEITO = i => i.status === "comprado" || i.status === "parcial";
+const qtdTxt = i => `${fmtQ(i.quantidade)} ${fmtUn(i.quantidade,i.unidade)}`;
+const qtdComprTxt = i => i.status === "parcial" ? `${fmtQ(i.qtd_comprada)} de ${fmtQ(i.quantidade)} ${fmtUn(i.quantidade,i.unidade)}` : qtdTxt(i);
+function detalheItem(i){
+  const d = [];
+  if(i.observacao) d.push(`<div class="obs">📝 ${esc(i.observacao)}</div>`);
+  if(i.status === "parcial") d.push(`<div class="obs" style="color:var(--warn)">½ Comprado ${esc(qtdComprTxt(i))}</div>`);
+  if(i.substituto) d.push(`<div class="obs" style="color:var(--pri)">↪ Substituto: ${esc(i.substituto)}</div>`);
+  return d.join("");
+}
+function statusSpan(i){
+  const m = {comprado:["var(--ok)","✓ Comprado"], parcial:["var(--warn)","½ Parcial"], indisponivel:["var(--bad)","✕ Indisponível"]}[i.status];
+  return m ? `<span class="small" style="color:${m[0]};white-space:nowrap">${m[1]}</span>` : "";
 }
 const fmtData = d => { if(!d) return ""; const [y,m,dd] = String(d).slice(0,10).split("-"); return `${dd}/${m}/${y}`; };
 const fmtHora = d => new Date(d).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
@@ -204,29 +244,30 @@ function itemEditor(container, itens, onChange){
         <div class="full"><label for="np">Produto</label><input id="np" placeholder="Ex.: Arroz 5kg" autocomplete="off" maxlength="200"></div>
         <div><label for="nq">Quantidade</label><input id="nq" type="number" inputmode="decimal" min="0" step="any" value="1"></div>
         <div><label for="nu">Tipo</label><select id="nu">${UNIDADES.map(u=>`<option>${u}</option>`).join("")}</select></div>
+        <div class="full"><label for="no">Observação <span class="muted" style="font-weight:400">(opcional: marca, tamanho, "se não tiver, pode ser...")</span></label><input id="no" maxlength="300" autocomplete="off"></div>
         <div class="full"><button class="btn block" id="nadd" type="button">+ Adicionar</button></div>
       </div>
       <div class="draft" style="margin-top:12px">
         ${itens.length ? itens.map((it,i)=>`
           <div class="item"><div class="info"><div class="p">${esc(it.produto)}</div>
-          <div class="q">${fmtQ(it.quantidade)} ${esc(fmtUn(it.quantidade,it.unidade))}</div></div>
+          <div class="q">${fmtQ(it.quantidade)} ${esc(fmtUn(it.quantidade,it.unidade))}</div>${it.observacao?`<div class="obs">📝 ${esc(it.observacao)}</div>`:""}</div>
           <button class="x" data-i="${i}" title="Remover" aria-label="Remover">✕</button></div>`).join("")
         : `<div class="empty small">Nenhum item ainda. Adicione o primeiro acima.</div>`}
       </div>`;
-    const np = container.querySelector("#np"), nq = container.querySelector("#nq"), nu = container.querySelector("#nu");
+    const np = container.querySelector("#np"), nq = container.querySelector("#nq"), nu = container.querySelector("#nu"), no = container.querySelector("#no");
     const last = store.get("sc_ultima_unidade");
     if(last && UNIDADES.includes(last)) nu.value = last;
     const add = () => {
       const produto = np.value.trim(); const quantidade = parseFloat(String(nq.value).replace(",", "."));
       if(!produto){ np.focus(); return; }
       if(!(quantidade > 0)){ toast("Informe uma quantidade válida", {err:1}); nq.focus(); return; }
-      itens.push({produto, quantidade, unidade: nu.value});
+      itens.push({produto, quantidade, unidade: nu.value, observacao: no.value.trim()});
       store.set("sc_ultima_unidade", nu.value);
       onChange && onChange(); render();
       container.querySelector("#np").focus();
     };
     container.querySelector("#nadd").onclick = add;
-    np.onkeydown = nq.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); add(); } };
+    np.onkeydown = nq.onkeydown = no.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); add(); } };
     container.querySelectorAll(".x").forEach(b => b.onclick = () => { itens.splice(+b.dataset.i,1); onChange && onChange(); render(); });
   }
   render();
@@ -234,7 +275,7 @@ function itemEditor(container, itens, onChange){
 
 /* ====== CLIENTE: nova lista (?c=usuario) ====== */
 async function telaNovaLista(usuario){
-  setTop(`<h1>🛒 Smart Compras</h1>`);
+  setTop(`<h1>${LOGO}</h1>`);
   let comp;
   try{ comp = await rpc("sc_info_comprador", {p_usuario: usuario}); }
   catch(e){ app.innerHTML = `<div class="card empty">${esc(e.message)}</div>`; return; }
@@ -245,12 +286,23 @@ async function telaNovaLista(usuario){
   rasc.dados.data = rasc.dados.data || hoje();
   const salvar = () => store.set(rk, rasc);
   const minhas = store.get("sc_minhas_listas", []).filter(m => m.usuario === usuario);
+  const rep = new URLSearchParams(location.search).get("repetir");
+  if(rep){
+    history.replaceState(null, "", linkCliente(usuario));
+    try{
+      const ant = await rpc("sc_ver_lista", {p_token: rep});
+      rasc.itens = ant.itens.map(i => ({produto:i.produto, quantidade:Number(i.quantidade), unidade:i.unidade, observacao:i.observacao||""}));
+      rasc.dados.data = hoje(); rasc.passo = 1; salvar();
+      setTimeout(() => toast(`${rasc.itens.length} itens copiados da lista de ${fmtData(ant.data_lista)}. Confira seus dados e os itens antes de enviar.`, {ms:7000}), 50);
+    }catch(e){ toast("Não foi possível copiar a lista anterior.", {err:1}); }
+  }
 
   function passo1(){
     rasc.passo = 1; salvar();
     const d = rasc.dados;
     app.innerHTML = `
       <div class="card">
+        <img class="hero" src="img/fundo-m.jpg" alt="Smart Compras">
         <div class="steps"><span class="on"></span><span></span></div>
         <h2>Lista de compras para ${esc(comp.nome)}</h2>
         <p class="muted small">Preencha seus dados e depois adicione os produtos.</p>
@@ -262,11 +314,12 @@ async function telaNovaLista(usuario){
             <div><label for="ft">Telefone (WhatsApp)</label><input id="ft" type="tel" required maxlength="30" value="${esc(d.telefone)}" placeholder="(93) 99999-9999" autocomplete="tel"></div>
           </div>
           <label for="fo">Observação <span class="muted">(opcional)</span></label><textarea id="fo" rows="2" maxlength="500">${esc(d.observacao)}</textarea>
-          <div class="btns"><button class="btn block" type="submit">Continuar para os itens →</button></div>
+          <div class="btns"><button class="btn block" type="submit">Continuar para os itens${rasc.itens.length ? ` (${rasc.itens.length})` : ""} →</button></div>
         </form>
       </div>
       ${minhas.length ? `<div class="card"><h3>Suas listas enviadas</h3>${minhas.slice(0,10).map(m=>`
         <div class="item"><div class="info"><div class="p">${esc(m.local)} · ${fmtData(m.data)}</div></div>
+        <a class="btn ghost" href="${esc(linkCliente(usuario))}&repetir=${esc(m.token)}" title="Fazer uma nova lista com os mesmos itens">↻ Repetir</a>
         <a class="btn sec" href="${esc(linkLista(m.token))}">Abrir</a></div>`).join("")}</div>` : ""}`;
     $("#f").onsubmit = e => {
       e.preventDefault();
@@ -310,7 +363,7 @@ async function telaNovaLista(usuario){
 
 /* ====== CLIENTE: ver lista / adicionar / relatório (?l=token) ====== */
 async function telaListaCliente(token){
-  setTop(`<h1>🛒 Smart Compras</h1>`);
+  setTop(`<h1>${LOGO}</h1>`);
   let L;
   async function carregar(){ L = await rpc("sc_ver_lista", {p_token: token}); }
   try{ await carregar(); }
@@ -321,9 +374,11 @@ async function telaListaCliente(token){
   const ml = store.get("sc_minhas_listas", []);
   if(!ml.some(m => m.token === token)){ ml.unshift({token, local:L.local, data:L.data_lista, comprador:L.comprador_nome}); store.set("sc_minhas_listas", ml.slice(0,50)); }
 
+  const minha = store.get("sc_minhas_listas", []).find(m => m.token === token && m.usuario);
+  const btnRepetir = minha ? `<a class="btn ghost" href="${esc(linkCliente(minha.usuario))}&repetir=${esc(token)}">↻ Nova lista com estes itens</a>` : "";
   function ver(){
-    if(L.status === "finalizada") return relatorio(L, {cliente:true, el:app, token});
-    const t = L.itens.length, c = L.itens.filter(i=>i.status==="comprado").length, x = L.itens.filter(i=>i.status==="indisponivel").length;
+    if(L.status === "finalizada") return relatorio(L, {cliente:true, el:app, token, acoes: btnRepetir});
+    const t = L.itens.length, c = L.itens.filter(FEITO).length, x = L.itens.filter(i=>i.status==="indisponivel").length;
     app.innerHTML = `
       <div class="card">
         <div class="t" style="display:flex;justify-content:space-between;gap:8px"><h2 style="margin:0">Sua lista</h2><span class="badge b-${L.status}">${STATUS_CLI[L.status]}</span></div>
@@ -340,8 +395,8 @@ async function telaListaCliente(token){
         <h3>${t} ${t===1?"item":"itens"}</h3>
         ${L.itens.map(i=>`<div class="item ${i.status}"><div class="info">
           <div class="p">${esc(i.produto)}${i.adicional?`<span class="tag">adicionado</span>`:""}</div>
-          <div class="q">${fmtQ(i.quantidade)} ${esc(fmtUn(i.quantidade,i.unidade))}</div></div>
-          <span class="small" style="color:${i.status==="comprado"?"var(--ok)":i.status==="indisponivel"?"var(--bad)":"var(--muted)"}">${i.status==="comprado"?"✓ Comprado":i.status==="indisponivel"?"✕ Indisponível":""}</span></div>`).join("")}
+          <div class="q">${esc(qtdTxt(i))}</div>${detalheItem(i)}</div>
+          ${statusSpan(i)}</div>`).join("")}
       </div>
       <div class="card no-print">
         <p class="small muted" style="margin-top:0">Guarde este link para acompanhar a compra e ver o relatório final.</p>
@@ -388,9 +443,9 @@ async function telaListaCliente(token){
 /* ====== RELATÓRIO (comum) ====== */
 function textoRelatorio(L, token){
   const g = s => L.itens.filter(i => i.status === s);
-  const linha = i => `• ${fmtQ(i.quantidade)} ${fmtUn(i.quantidade,i.unidade)} - ${i.produto}`;
+  const linha = i => `• ${qtdComprTxt(i)} - ${i.produto}${i.status==="parcial"?" (parcial)":""}${i.substituto?`\n   ↪ substituto: ${i.substituto}`:""}`;
   let t = `*Relatório de compras*\n${L.cliente_nome} · ${L.local}\nLista de ${fmtData(L.data_lista)}\n`;
-  const c = g("comprado"), x = g("indisponivel"), p = g("pendente");
+  const c = L.itens.filter(FEITO), x = g("indisponivel"), p = g("pendente");
   t += `\n✅ *Comprados (${c.length})*\n${c.map(linha).join("\n") || "—"}\n`;
   if(x.length) t += `\n❌ *Indisponíveis (${x.length})*\n${x.map(linha).join("\n")}\n`;
   if(p.length) t += `\n⏳ *Não comprados (${p.length})*\n${p.map(linha).join("\n")}\n`;
@@ -399,12 +454,12 @@ function textoRelatorio(L, token){
 }
 function relatorio(L, {cliente, el, token, acoes}){
   const g = s => L.itens.filter(i => i.status === s);
-  const c = g("comprado"), x = g("indisponivel"), p = g("pendente");
+  const c = L.itens.filter(FEITO), x = g("indisponivel"), p = g("pendente"), pa = g("parcial");
   const ck = store.get("sc_conferido_" + token, {});
   const linhas = (arr, conf) => `<table>${arr.map(i => `<tr>
       ${conf ? `<td class="ck no-print"><input type="checkbox" data-id="${i.id}" ${ck[i.id]?"checked":""} aria-label="Recebido"></td>` : ""}
-      <td>${esc(i.produto)}${i.adicional?`<span class="tag">adicionado</span>`:""}</td>
-      <td class="qt">${fmtQ(i.quantidade)} ${esc(fmtUn(i.quantidade,i.unidade))}</td></tr>`).join("")}</table>`;
+      <td>${esc(i.produto)}${i.adicional?`<span class="tag">adicionado</span>`:""}${i.observacao?`<div class="obs">📝 ${esc(i.observacao)}</div>`:""}${i.substituto?`<div class="obs" style="color:var(--pri)">↪ Substituto: ${esc(i.substituto)}</div>`:""}</td>
+      <td class="qt">${i.status==="parcial"?`<span style="color:var(--warn)">${esc(qtdComprTxt(i))}</span>`:esc(qtdTxt(i))}</td></tr>`).join("")}</table>`;
   el.innerHTML = `
     <div class="card report">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
@@ -419,7 +474,7 @@ function relatorio(L, {cliente, el, token, acoes}){
       </div>
       ${L.observacao ? `<p class="small muted">Obs.: ${esc(L.observacao)}</p>` : ""}
       <div class="stats">
-        <div class="stat s-ok"><strong>${c.length}</strong>comprados</div>
+        <div class="stat s-ok"><strong>${c.length}</strong>comprados${pa.length?`<div class="small">${pa.length} parcial${pa.length>1?"is":""}</div>`:""}</div>
         <div class="stat s-bad"><strong>${x.length}</strong>indisponíveis</div>
         ${p.length ? `<div class="stat s-pen"><strong>${p.length}</strong>pendentes</div>` : ""}
       </div>
@@ -445,7 +500,8 @@ let SESS = store.get("sc_sessao");
 let PAINEL = null, ALERTAS_VISTOS = new Set(store.get("sc_alertas_vistos", [])), pollTimer = null, filtro = store.get("sc_filtro", "abertas");
 
 function telaLogin(){
-  setTop(`<h1>🛒 Smart Compras</h1>`);
+  document.body.classList.add("login");
+  setTop(`<h1>${LOGO}</h1>`);
   let modo = "entrar";
   function render(){
     app.innerHTML = `
@@ -478,7 +534,7 @@ function sair(){ store.del("sc_sessao"); SESS = null; clearInterval(pollTimer); 
 
 function topComprador(){
   const n = PAINEL ? PAINEL.alertas.length : 0;
-  setTop(`<h1 id="home">🛒 Smart Compras</h1>
+  setTop(`<h1 id="home">${LOGO}</h1>
     <button class="bell" id="bell" title="Alertas" aria-label="Alertas">🔔${n ? `<span class="n">${n}</span>` : ""}</button>
     <button id="out" title="Sair">Sair</button>`);
   $("#home").onclick = () => { location.hash = ""; };
@@ -513,7 +569,7 @@ function iniciarPoll(){
     if(JSON.stringify(PAINEL) === antes) return;
     topComprador();
     const h = location.hash.slice(1);
-    if(h === "" || h === "alertas") rotear(true);
+    if((h === "" && document.activeElement?.id !== "busca") || h === "alertas") rotear(true);
     else if(h.startsWith("lista/")){
       const id = h.split("/")[1];
       if(PAINEL.alertas.some(a => a.lista_id === id)) rotear(true);
@@ -521,12 +577,15 @@ function iniciarPoll(){
   }, POLL_MS);
 }
 
+let busca = "", instalarEvt = null;
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); instalarEvt = e; if(SESS && location.hash === "" && !location.search && $("#lk") && !$("#instalar")) telaPainel(); });
+const norm = t => String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
 async function telaPainel(){
   topComprador();
   const P = PAINEL, L = P.listas;
   const filtros = {abertas:"Abertas", enviada:"Novas", em_compra:"Em compra", finalizada:"Finalizadas", todas:"Todas"};
-  const vis = L.filter(l => filtro==="todas" || (filtro==="abertas" ? l.status!=="finalizada" : l.status===filtro));
-  const cont = k => L.filter(l => k==="todas" || (k==="abertas" ? l.status!=="finalizada" : l.status===k)).length;
+  const noFiltro = (l, k) => k==="todas" || (k==="abertas" ? l.status!=="finalizada" : l.status===k);
+  const cont = k => L.filter(l => noFiltro(l,k)).length;
   const notifOk = !("Notification" in window) || Notification.permission !== "default";
   app.innerHTML = `
     <h2 style="margin-top:8px">Olá, ${esc(P.comprador.nome)}</h2>
@@ -535,14 +594,23 @@ async function telaPainel(){
       <p class="small muted" style="margin-top:0">Envie este link. Cada cliente preenche os dados e os itens, e a lista chega aqui.</p>
       <div class="linkbox"><input readonly value="${esc(linkCliente(P.comprador.usuario))}" id="lk"><button class="btn sec" id="cp">Copiar</button></div>
       <div class="btns"><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent("Faça sua lista de compras por aqui: " + linkCliente(P.comprador.usuario))}">Enviar pelo WhatsApp</a>
-      ${notifOk ? "" : `<button class="btn ghost" id="notif">🔔 Ativar notificações</button>`}</div>
+      ${notifOk ? "" : `<button class="btn ghost" id="notif">🔔 Ativar notificações</button>`}
+      ${instalarEvt ? `<button class="btn ghost" id="instalar">📲 Instalar app</button>` : ""}</div>
     </div>
     ${P.alertas.length ? `<div class="card" style="border-color:var(--warn)"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
       <h3 style="margin:0">🔔 ${P.alertas.length} ${P.alertas.length===1?"alerta novo":"alertas novos"}</h3><a href="#alertas">ver</a></div>
       <div class="alertlist">${P.alertas.slice(0,3).map(a=>`<div class="a" data-l="${a.lista_id}">${esc(a.mensagem)} <span class="muted small">· ${fmtHora(a.criado_em)}</span></div>`).join("")}</div></div>` : ""}
+    <div style="display:flex;gap:8px;align-items:center" class="search">
+      <input id="busca" type="search" placeholder="🔍 Buscar cliente, local ou telefone" value="${esc(busca)}" style="flex:1">
+      <a class="btn ghost" href="#historico" style="white-space:nowrap">📊 Histórico</a>
+    </div>
     <div class="tabs">${Object.entries(filtros).map(([k,v]) => `<button data-f="${k}" class="${filtro===k?"on":""}">${v} (${cont(k)})</button>`).join("")}</div>
-    ${vis.length ? vis.map(l => {
-      const t = +l.total, c = +l.comprados, x = +l.indisponiveis;
+    <div id="listas"></div>`;
+  function renderListas(){
+    const q = norm(busca);
+    const vis = L.filter(l => noFiltro(l, q ? "todas" : filtro) && (!q || norm(l.cliente_nome+" "+l.local+" "+l.telefone).includes(q)));
+    $("#listas").innerHTML = vis.length ? vis.map(l => {
+      const t = +l.total, c = +l.comprados + (+l.parciais||0), x = +l.indisponiveis;
       return `<div class="card lcard" data-l="${l.id}">
         <div class="t"><div><div class="nm">${esc(l.cliente_nome)}</div>
           <div class="muted small">${esc(l.local)} · ${fmtData(l.data_lista)}</div></div>
@@ -550,11 +618,51 @@ async function telaPainel(){
         <div class="bar"><i class="g" style="width:${t?c/t*100:0}%"></i><i class="r" style="width:${t?x/t*100:0}%"></i></div>
         <div class="small muted" style="margin-top:6px">${c+x} de ${t} itens verificados${x?` · ${x} indisponíveis`:""}</div>
       </div>`; }).join("")
-    : `<div class="card empty">${L.length ? "Nenhuma lista neste filtro." : "Nenhuma lista ainda. Envie seu link para um cliente começar."}</div>`}`;
+    : `<div class="card empty">${q ? "Nenhuma lista encontrada para essa busca." : L.length ? "Nenhuma lista neste filtro." : "Nenhuma lista ainda. Envie seu link para um cliente começar."}</div>`;
+    $("#listas").querySelectorAll("[data-l]").forEach(c => c.onclick = () => location.hash = "lista/" + c.dataset.l);
+  }
+  renderListas();
+  $("#busca").oninput = e => { busca = e.target.value; renderListas(); };
   $("#cp").onclick = () => copiar(linkCliente(P.comprador.usuario));
   const nb = $("#notif"); if(nb) nb.onclick = async () => { await Notification.requestPermission(); telaPainel(); };
-  app.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { filtro = b.dataset.f; store.set("sc_filtro", filtro); telaPainel(); });
-  app.querySelectorAll("[data-l]").forEach(c => c.onclick = () => location.hash = "lista/" + c.dataset.l);
+  const ib = $("#instalar"); if(ib) ib.onclick = async () => { instalarEvt.prompt(); await instalarEvt.userChoice.catch(()=>{}); instalarEvt = null; telaPainel(); };
+  app.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { filtro = b.dataset.f; busca = ""; store.set("sc_filtro", filtro); telaPainel(); });
+  app.querySelectorAll(".alertlist [data-l]").forEach(c => c.onclick = () => location.hash = "lista/" + c.dataset.l);
+}
+
+const MESES = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+async function telaHistorico(){
+  topComprador();
+  const L = PAINEL.listas;
+  const porMes = {};
+  L.forEach(l => {
+    const k = String(l.data_lista).slice(0,7);
+    const m = porMes[k] ||= {listas:0, fin:0, itens:0, comprados:0, indisp:0, clientes:{}};
+    m.listas++; if(l.status==="finalizada") m.fin++;
+    m.itens += +l.total; m.comprados += +l.comprados + (+l.parciais||0); m.indisp += +l.indisponiveis;
+    const ck = l.cliente_nome.trim();
+    m.clientes[ck] = (m.clientes[ck]||0) + 1;
+  });
+  const meses = Object.keys(porMes).sort().reverse();
+  const clientes = {};
+  L.forEach(l => { const k = l.cliente_nome.trim(); const c = clientes[k] ||= {n:0, locais:new Set(), ult:""}; c.n++; c.locais.add(l.local); if(l.data_lista > c.ult) c.ult = l.data_lista; });
+  const topCli = Object.entries(clientes).sort((a,b) => b[1].n - a[1].n).slice(0,10);
+  const nomeMes = k => { const [y,m] = k.split("-"); return `${MESES[+m-1]} ${y}`; };
+  app.innerHTML = `
+    <p style="margin:4px 0"><a href="#">← Listas</a></p>
+    <div class="card">
+      <h2 style="margin:0 0 8px">Histórico por mês</h2>
+      ${meses.length ? `<table class="hist"><thead><tr><th>Mês</th><th>Listas</th><th>Itens</th><th>Compr.</th><th>Indisp.</th></tr></thead><tbody>
+        ${meses.map(k => { const m = porMes[k]; return `<tr><td><span style="text-transform:capitalize">${nomeMes(k)}</span><div class="obs">${Object.keys(m.clientes).length} cliente${Object.keys(m.clientes).length>1?"s":""} · ${m.fin} finalizada${m.fin===1?"":"s"}</div></td>
+          <td>${m.listas}</td><td>${m.itens}</td><td style="color:var(--ok)">${m.comprados}</td><td style="color:var(--bad)">${m.indisp}</td></tr>`; }).join("")}
+      </tbody></table>` : `<div class="empty">Ainda não há listas.</div>`}
+    </div>
+    ${topCli.length ? `<div class="card"><h3>Clientes que mais pedem</h3>
+      ${topCli.map(([nome, c]) => `<div class="item"><div class="info"><div class="p">${esc(nome)}</div>
+        <div class="q">${esc([...c.locais].join(", "))} · última em ${fmtData(c.ult)}</div></div>
+        <a href="#" class="btn sec" data-b="${esc(nome)}">${c.n} lista${c.n>1?"s":""}</a></div>`).join("")}
+    </div>` : ""}`;
+  app.querySelectorAll("[data-b]").forEach(a => a.onclick = e => { e.preventDefault(); busca = a.dataset.b; location.hash = ""; });
 }
 
 async function telaAlertas(){
@@ -591,8 +699,19 @@ async function telaListaComprador(id, modoRel){
     return;
   }
 
+  let aberto = null;
+  function formItem(i){
+    const parcial = aberto.modo === "parcial";
+    return `<form class="sub" id="fi-form">
+      ${parcial ? `<label for="fi-q">Quanto você comprou? <span class="muted" style="font-weight:400">(pedido: ${esc(qtdTxt(i))})</span></label>
+        <input id="fi-q" type="number" inputmode="decimal" min="0" step="any" value="${i.status==="parcial"?esc(i.qtd_comprada):""}">` : ""}
+      <label for="fi-s">${parcial ? "Substituto para o restante" : "Comprou algo no lugar?"} <span class="muted" style="font-weight:400">(opcional)</span></label>
+      <input id="fi-s" maxlength="200" placeholder="Ex.: Arroz Tio João no lugar do Camil" value="${esc(i.substituto||"")}">
+      <div class="btns"><button type="button" class="btn ghost" id="fi-x">Cancelar</button><button class="btn" type="submit">Salvar</button></div>
+    </form>`;
+  }
   function render(){
-    const t = L.itens.length, c = L.itens.filter(i=>i.status==="comprado").length, x = L.itens.filter(i=>i.status==="indisponivel").length;
+    const t = L.itens.length, c = L.itens.filter(FEITO).length, x = L.itens.filter(i=>i.status==="indisponivel").length;
     const itens = ocultarFeitos ? L.itens.filter(i => i.status==="pendente") : L.itens;
     const wa = foneWa(L.telefone);
     app.innerHTML = `
@@ -610,13 +729,16 @@ async function telaListaComprador(id, modoRel){
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
           <h3 style="margin:0">Itens</h3>
           <label class="chk" style="margin:0;font-weight:500"><input type="checkbox" id="oc" ${ocultarFeitos?"checked":""}> Só pendentes</label></div>
-        <p class="small muted" style="margin:4px 0 0">✓ comprado · ✕ indisponível. Toque de novo para desfazer.</p>
+        <p class="small muted" style="margin:4px 0 0">✓ comprado · ½ comprado em parte · ✕ indisponível. Toque de novo para desfazer.</p>
         <div style="margin-top:4px">${itens.length ? itens.map(i => `<div class="item ${i.status}" data-i="${i.id}"><div class="info">
             <div class="p">${esc(i.produto)}${i.adicional?`<span class="tag">adicionado depois</span>`:""}</div>
-            <div class="q">${fmtQ(i.quantidade)} ${esc(fmtUn(i.quantidade,i.unidade))}${i.status==="indisponivel"?` · <span style="color:var(--bad)">indisponível</span>`:""}</div></div>
+            <div class="q">${esc(qtdTxt(i))}${i.status==="indisponivel"?` · <span style="color:var(--bad)">indisponível</span>`:""}</div>${detalheItem(i)}
+            ${i.status==="indisponivel" && !i.substituto ? `<a href="#" class="small" data-subst="${i.id}">+ informar substituto</a>` : ""}</div>
             <button class="ib ${i.status==="indisponivel"?"on-bad":""}" data-s="indisponivel" title="Indisponível" aria-label="Indisponível">✕</button>
+            <button class="ib ${i.status==="parcial"?"on-warn":""}" data-s="parcial" title="Comprado em parte" aria-label="Comprado em parte">½</button>
             <button class="ib ${i.status==="comprado"?"on-ok":""}" data-s="comprado" title="Comprado" aria-label="Comprado">✓</button>
-          </div>`).join("") : `<div class="empty">Tudo verificado! 🎉</div>`}</div>
+          </div>
+          ${aberto && aberto.id===i.id ? formItem(i) : ""}`).join("") : `<div class="empty">Tudo verificado! 🎉</div>`}</div>
       </div>
       <div class="card no-print"><div class="btns" style="margin-top:0">
         <button class="btn danger" id="del">Excluir lista</button>
@@ -625,13 +747,37 @@ async function telaListaComprador(id, modoRel){
         <button class="btn" id="fin">Finalizar compra e gerar relatório</button>
       </div></div>`;
     $("#oc").onchange = e => { ocultarFeitos = e.target.checked; store.set("sc_ocultar", ocultarFeitos); render(); };
-    app.querySelectorAll(".item[data-i] .ib").forEach(b => b.onclick = async () => {
+    async function salvarItem(it, status, qtd, subst){
+      const ant = {status: it.status, qtd_comprada: it.qtd_comprada, substituto: it.substituto};
+      Object.assign(it, {status, qtd_comprada: status==="parcial" ? qtd : status==="comprado" ? it.quantidade : null, substituto: status==="pendente" ? null : (subst||null)});
+      if(L.status === "enviada") L.status = "em_compra";
+      aberto = null; render();
+      try{ await rpc("sc_marcar_item", {p_chave: SESS.chave, p_item: it.id, p_status: status, p_qtd: status==="parcial" ? qtd : null, p_substituto: it.substituto}); }
+      catch(e){ Object.assign(it, ant); render(); toast(e.message, {err:1}); }
+    }
+    app.querySelectorAll(".item[data-i] .ib").forEach(b => b.onclick = () => {
       const it = L.itens.find(i => i.id === b.closest(".item").dataset.i);
-      const novo = it.status === b.dataset.s ? "pendente" : b.dataset.s;
-      const ant = it.status; it.status = novo; if(L.status === "enviada") L.status = "em_compra"; render();
-      try{ await rpc("sc_marcar_item", {p_chave: SESS.chave, p_item: it.id, p_status: novo}); }
-      catch(e){ it.status = ant; render(); toast(e.message, {err:1}); }
+      const s = b.dataset.s;
+      if(it.status === s){ return salvarItem(it, "pendente"); }
+      if(s === "parcial"){ aberto = {id: it.id, modo: "parcial"}; return render(); }
+      salvarItem(it, s, null, s === "indisponivel" ? null : it.substituto);
     });
+    app.querySelectorAll("[data-subst]").forEach(a => a.onclick = e => { e.preventDefault(); aberto = {id: a.dataset.subst, modo: "indisponivel"}; render(); });
+    const fi = app.querySelector("#fi-form");
+    if(fi){
+      const it = L.itens.find(i => i.id === aberto.id);
+      const q = app.querySelector("#fi-q"); (q || app.querySelector("#fi-s")).focus();
+      app.querySelector("#fi-x").onclick = () => { aberto = null; render(); };
+      fi.onsubmit = e => {
+        e.preventDefault();
+        const subst = app.querySelector("#fi-s").value.trim();
+        if(aberto.modo === "parcial"){
+          const v = parseFloat(String(q.value).replace(",", "."));
+          if(!(v > 0) || v >= Number(it.quantidade)){ toast(`Informe uma quantidade entre 0 e ${fmtQ(it.quantidade)}`, {err:1}); q.focus(); return; }
+          salvarItem(it, "parcial", v, subst);
+        } else salvarItem(it, "indisponivel", null, subst);
+      };
+    }
     $("#del").onclick = async () => {
       if(!confirm(`Excluir a lista de ${L.cliente_nome}? Isso não pode ser desfeito.`)) return;
       await rpc("sc_excluir_lista", {p_chave: SESS.chave, p_lista: id}); toast("Lista excluída"); location.hash = "";
@@ -655,6 +801,7 @@ async function telaListaComprador(id, modoRel){
 
 /* ====== roteamento ====== */
 async function rotear(semRolar){
+  document.body.classList.remove("login");
   const q = new URLSearchParams(location.search);
   if(q.get("c")) return telaNovaLista(q.get("c"));
   if(q.get("l")) return telaListaCliente(q.get("l"));
@@ -663,14 +810,17 @@ async function rotear(semRolar){
   if(!SESS) return;
   iniciarPoll();
   const h = location.hash.slice(1);
+  if(h === "" || h === "historico") await atualizarPainel(true);
   if(h.startsWith("lista/")) await telaListaComprador(h.split("/")[1]);
   else if(h === "alertas") await telaAlertas();
+  else if(h === "historico") await telaHistorico();
   else await telaPainel();
   if(!semRolar) scrollTo(0,0);
 }
 addEventListener("hashchange", () => rotear());
 document.addEventListener("visibilitychange", () => { if(!document.hidden && SESS && !location.search) atualizarPainel(true).then(() => topComprador()); });
 rotear();
+if("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>
 </html>
