@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<title>Smart Compras</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f766e'/%3E%3Cpath d='M16 20h5l5 22h18l4-15H24' stroke='white' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='28' cy='49' r='3' fill='white'/%3E%3Ccircle cx='42' cy='49' r='3' fill='white'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f4f6f5;--card:#fff;--ink:#16211f;--muted:#5f6d6a;--line:#e1e6e4;
+  --pri:#0f766e;--pri-ink:#fff;--pri-soft:#e3f3f1;
+  --ok:#15803d;--ok-soft:#e5f6ea;--bad:#b42318;--bad-soft:#fdecea;--warn:#b45309;--warn-soft:#fff4e0;
+  --radius:14px;--shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#0f1514;--card:#18201f;--ink:#e7eeec;--muted:#9aa9a6;--line:#2a3533;
+  --pri:#2bb3a6;--pri-ink:#062320;--pri-soft:#173532;--ok:#4ade80;--ok-soft:#163423;--bad:#f87171;--bad-soft:#3a1d1b;--warn:#fbbf24;--warn-soft:#3a2d12;
+  --shadow:none}
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--pri)}
+.wrap{max-width:760px;margin:0 auto;padding:16px 16px 96px}
+header.top{position:sticky;top:0;z-index:20;background:var(--pri);color:#fff}
+header.top .in{max-width:760px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:10px}
+header.top h1{font-size:18px;margin:0;flex:1;display:flex;align-items:center;gap:8px;cursor:pointer}
+header.top button{background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:10px;padding:8px 10px;font-size:14px;cursor:pointer;position:relative}
+.bell .n{position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border-radius:999px;font-size:11px;min-width:18px;height:18px;line-height:18px;padding:0 5px;font-weight:700}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin:12px 0;box-shadow:var(--shadow)}
+h2{font-size:20px;margin:4px 0 12px}
+h3{font-size:16px;margin:0 0 8px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+label{display:block;font-size:14px;font-weight:600;margin:10px 0 4px}
+input,select,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--pri);outline-offset:0;border-color:transparent}
+.row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.row>*{flex:1;min-width:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:10px;padding:12px 16px;font:600 15px system-ui,sans-serif;cursor:pointer;background:var(--pri);color:var(--pri-ink);text-decoration:none}
+.btn.sec{background:var(--pri-soft);color:var(--pri)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:var(--bad-soft);color:var(--bad)}
+.btn.wa{background:#25d366;color:#05301a}
+.btn.block{width:100%}
+.btn:disabled{opacity:.55;cursor:default}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btns .btn{flex:1 1 160px}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin:8px 0;padding-bottom:2px}
+.tabs button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:7px 14px;font-size:14px;white-space:nowrap;cursor:pointer}
+.tabs button.on{background:var(--pri);color:var(--pri-ink);border-color:var(--pri)}
+.badge{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px}
+.b-enviada{background:var(--warn-soft);color:var(--warn)}
+.b-em_compra{background:var(--pri-soft);color:var(--pri)}
+.b-finalizada{background:var(--ok-soft);color:var(--ok)}
+.b-novo{background:#ef4444;color:#fff}
+.lcard{display:block;text-decoration:none;color:inherit;cursor:pointer}
+.lcard .t{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.lcard .nm{font-weight:700;font-size:17px}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:10px;display:flex}
+.bar i{display:block;height:100%}
+.bar .g{background:var(--ok)}.bar .r{background:var(--bad)}
+.item{display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.item .info{flex:1;min-width:0}
+.item .p{font-weight:600;word-break:break-word}
+.item .q{color:var(--muted);font-size:14px}
+.item.comprado .p{text-decoration:line-through;color:var(--muted)}
+.item.indisponivel .p{color:var(--bad)}
+.ib{border:1px solid var(--line);background:var(--card);border-radius:10px;width:46px;height:46px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);flex:none}
+.ib.on-ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.ib.on-bad{background:var(--bad);border-color:var(--bad);color:#fff}
+.tag{font-size:11px;font-weight:700;background:var(--warn-soft);color:var(--warn);border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:middle;white-space:nowrap}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:15px}
+.kv b{color:var(--muted);font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;margin-top:12px}
+.stat{border-radius:12px;padding:10px 6px;text-align:center;font-size:14px;min-width:0}
+.stat strong{display:block;font-size:22px}
+.s-ok{background:var(--ok-soft);color:var(--ok)}.s-bad{background:var(--bad-soft);color:var(--bad)}.s-pen{background:var(--warn-soft);color:var(--warn)}
+.newitem{display:grid;grid-template-columns:1fr 90px 120px auto;gap:8px;align-items:end}
+@media (max-width:560px){.newitem{grid-template-columns:1fr 1fr}.newitem .full{grid-column:1/-1}}
+.draft .item{padding:8px 0}
+.x{border:0;background:transparent;color:var(--bad);font-size:20px;cursor:pointer;padding:6px 10px}
+.linkbox{display:flex;gap:8px}
+.linkbox input{font-size:14px}
+.toastbox{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:50;display:flex;flex-direction:column;gap:8px;width:min(520px,calc(100% - 32px))}
+.toast{background:#111827;color:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-size:15px;cursor:pointer;animation:up .25s ease}
+.toast.err{background:#991b1b}
+@keyframes up{from{transform:translateY(10px);opacity:0}}
+.alertlist .a{padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.alertlist .a:first-child{border-top:0}
+.empty{text-align:center;padding:28px 12px;color:var(--muted)}
+.steps{display:flex;gap:8px;margin-bottom:8px}
+.steps span{flex:1;height:5px;border-radius:9px;background:var(--line)}
+.steps span.on{background:var(--pri)}
+.sticky-bottom{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom));z-index:15}
+.sticky-bottom .in{max-width:760px;margin:0 auto;display:flex;gap:8px}
+.sticky-bottom .btn{flex:1}
+.report h4{margin:16px 0 4px;font-size:15px}
+.report table{width:100%;border-collapse:collapse;font-size:15px}
+.report td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+.report td.qt{white-space:nowrap;color:var(--muted);text-align:right}
+.report td.ck{width:34px}
+.report input[type=checkbox]{width:22px;height:22px;accent-color:var(--ok)}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;margin:8px 0}
+.chk input{width:auto}
+.spin{display:inline-block;width:18px;height:18px;border:3px solid var(--line);border-top-color:var(--pri);border-radius:50%;animation:sp 1s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.only-print{display:none}
+@media print{
+  header.top,.no-print,.toastbox,.sticky-bottom{display:none!important}
+  .only-print{display:block}
+  body{background:#fff;color:#000}
+  .card{border:0;box-shadow:none;padding:0}
+  .wrap{padding:0}
+  .report td{border-color:#bbb}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="in" id="topbar"></div></header>
+<main class="wrap" id="app"><div class="empty"><span class="spin"></span></div></main>
+<div class="toastbox" id="toasts"></div>
+
+<script>
+/* ====== CONFIGURAÇÃO ====== */
+const SUPABASE_URL = "https://ivqrabkzdzcgtqkhdrlx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_DbfKnRExNJZIAWLiBTVWbg_uUcTeqUB";
+const POLL_MS = 15000;
+const UNIDADES = ["Unidade","Pacote","Fardo","Saco","Caixa","Kg"];
+
+/* ====== utilidades ====== */
+const $ = s => document.querySelector(s);
+const app = $("#app");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store = {
+  get(k, d=null){ try{ const v = localStorage.getItem(k); return v==null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+async function rpc(fn, args){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method:"POST",
+    headers:{ "apikey":SUPABASE_KEY, "Content-Type":"application/json" },
+    body: JSON.stringify(args||{})
+  });
+  const txt = await r.text();
+  let data = null; try{ data = txt ? JSON.parse(txt) : null; }catch(e){ data = txt; }
+  if(!r.ok){ throw new Error((data && data.message) || "Falha de conexão. Tente novamente."); }
+  return data;
+}
+function toast(msg, opts={}){
+  const t = document.createElement("div");
+  t.className = "toast" + (opts.err ? " err" : "");
+  t.textContent = msg;
+  t.onclick = () => { t.remove(); opts.onclick && opts.onclick(); };
+  $("#toasts").appendChild(t);
+  setTimeout(() => t.remove(), opts.ms || 4500);
+}
+const fmtQ = q => Number(q).toLocaleString("pt-BR",{maximumFractionDigits:3});
+function fmtUn(q, u){
+  const n = Number(q);
+  if(n === 1 || u === "Kg") return u;
+  const pl = {Unidade:"Unidades",Pacote:"Pacotes",Fardo:"Fardos",Saco:"Sacos",Caixa:"Caixas"};
+  return pl[u] || u;
+}
+const fmtData = d => { if(!d) return ""; const [y,m,dd] = String(d).slice(0,10).split("-"); return `${dd}/${m}/${y}`; };
+const fmtHora = d => new Date(d).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+const hoje = () => { const d = new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const STATUS = {enviada:"Nova", em_compra:"Em compra", finalizada:"Finalizada"};
+const STATUS_CLI = {enviada:"Recebida pelo comprador", em_compra:"Compra em andamento", finalizada:"Compra finalizada"};
+function foneWa(t){
+  let d = String(t||"").replace(/\D/g,"");
+  if(d.startsWith("0")) d = d.replace(/^0+/,"");
+  if(d.length === 10 || d.length === 11) d = "55" + d;
+  return d;
+}
+const baseUrl = () => location.origin + location.pathname;
+const linkCliente = u => `${baseUrl()}?c=${encodeURIComponent(u)}`;
+const linkLista = tk => `${baseUrl()}?l=${encodeURIComponent(tk)}`;
+async function copiar(txt){
+  try{ await navigator.clipboard.writeText(txt); toast("Link copiado!"); }
+  catch(e){ prompt("Copie o link:", txt); }
+}
+function beep(){
+  try{
+    const C = new (window.AudioContext||window.webkitAudioContext)();
+    [0,0.18].forEach(t => { const o=C.createOscillator(), g=C.createGain(); o.frequency.value=880; o.connect(g); g.connect(C.destination);
+      g.gain.setValueAtTime(.18,C.currentTime+t); g.gain.exponentialRampToValueAtTime(.001,C.currentTime+t+.15); o.start(C.currentTime+t); o.stop(C.currentTime+t+.16); });
+  }catch(e){}
+}
+function busy(btn, on, txt){
+  if(!btn) return;
+  if(on){ btn.dataset.t = btn.innerHTML; btn.disabled = true; btn.innerHTML = `<span class="spin"></span> ${txt||""}`; }
+  else { btn.disabled = false; if(btn.dataset.t) btn.innerHTML = btn.dataset.t; }
+}
+function setTop(html){ $("#topbar").innerHTML = html; }
+
+/* ====== editor de itens (usado pelo cliente) ====== */
+function itemEditor(container, itens, onChange){
+  function render(){
+    container.innerHTML = `
+      <div class="newitem">
+        <div class="full"><label for="np">Produto</label><input id="np" placeholder="Ex.: Arroz 5kg" autocomplete="off" maxlength="200"></div>
+        <div><label for="nq">Quantidade</label><input id="nq" type="number" inputmode="decimal" min="0" step="any" value="1"></div>
+        <div><label for="nu">Tipo</label><select id="nu">${UNIDADES.map(u=>`<option>${u}</option>`).join("")}</select></div>
+        <div class="full"><button class="btn block" id="nadd" type="button">+ Adicionar</button></div>
+      </div>
+      <div class="draft" style="margin-top:12px">
+        ${itens.length ? itens.map((it,i)=>`
+          <div class="item"><div class="info"><div class="p">${esc(it.produto)}</div>
+          <div class="q">${fmtQ(it.quantidade)} ${esc(fmtUn(it.quantidade,it.unidade))}</div></div>
+          <button class="x" data-i="${i}" title="Remover" aria-label="Remover">✕</button></div>`).join("")
+        : `<div class="empty small">Nenhum item ainda. Adicione o primeiro acima.</div>`}
+      </div>`;
+    const np = container.querySelector("#np"), nq = container.querySelector("#nq"), nu = container.querySelector("#nu");
+    const last = store.get("sc_ultima_unidade");
+    if(last && UNIDADES.includes(last)) nu.value = last;
+    const add = () => {
+      const produto = np.value.trim(); const quantidade = parseFloat(String(nq.value).replace(",", "."));
+      if(!produto){ np.focus(); return; }
+      if(!(quantidade > 0)){ toast("Informe uma quantidade válida", {err:1}); nq.focus(); return; }
+      itens.push({produto, quantidade, unidade: nu.value});
+      store.set("sc_ultima_unidade", nu.value);
+      onChange && onChange(); render();
+      container.querySelector("#np").focus();
+    };
+    container.querySelector("#nadd").onclick = add;
+    np.onkeydown = nq.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); add(); } };
+    container.querySelectorAll(".x").forEach(b => b.onclick = () => { itens.splice(+b.dataset.i,1); onChange && onChange(); render(); });
+  }
+  render();
+}
+
+/* ====== CLIENTE: nova lista (?c=usuario) ====== */
+async function telaNovaLista(usuario){
+  setTop(`<h1>🛒 Smart Compras</h1>`);
+  let comp;
+  try{ comp = await rpc("sc_info_comprador", {p_usuario: usuario}); }
+  catch(e){ app.innerHTML = `<div class="card empty">${esc(e.message)}</div>`; return; }
+  if(!comp){ app.innerHTML = `<div class="card empty">Este link não é válido. Peça um novo link ao comprador.</div>`; return; }
+
+  const rk = "sc_rascunho_" + usuario;
+  const rasc = store.get(rk, {dados: store.get("sc_meus_dados", {}), itens: [], passo: 1});
+  rasc.dados.data = rasc.dados.data || hoje();
+  const salvar = () => store.set(rk, rasc);
+  const minhas = store.get("sc_minhas_listas", []).filter(m => m.usuario === usuario);
+
+  function passo1(){
+    rasc.passo = 1; salvar();
+    const d = rasc.dados;
+    app.innerHTML = `
+      <div class="card">
+        <div class="steps"><span class="on"></span><span></span></div>
+        <h2>Lista de compras para ${esc(comp.nome)}</h2>
+        <p class="muted small">Preencha seus dados e depois adicione os produtos.</p>
+        <form id="f">
+          <label for="fn">Seu nome</label><input id="fn" required maxlength="120" value="${esc(d.nome)}" autocomplete="name">
+          <label for="fl">Local ou garimpo</label><input id="fl" required maxlength="160" value="${esc(d.local)}" placeholder="Ex.: Garimpo São Domingos">
+          <div class="row">
+            <div><label for="fd">Data da lista</label><input id="fd" type="date" required value="${esc(d.data)}"></div>
+            <div><label for="ft">Telefone (WhatsApp)</label><input id="ft" type="tel" required maxlength="30" value="${esc(d.telefone)}" placeholder="(93) 99999-9999" autocomplete="tel"></div>
+          </div>
+          <label for="fo">Observação <span class="muted">(opcional)</span></label><textarea id="fo" rows="2" maxlength="500">${esc(d.observacao)}</textarea>
+          <div class="btns"><button class="btn block" type="submit">Continuar para os itens →</button></div>
+        </form>
+      </div>
+      ${minhas.length ? `<div class="card"><h3>Suas listas enviadas</h3>${minhas.slice(0,10).map(m=>`
+        <div class="item"><div class="info"><div class="p">${esc(m.local)} · ${fmtData(m.data)}</div></div>
+        <a class="btn sec" href="${esc(linkLista(m.token))}">Abrir</a></div>`).join("")}</div>` : ""}`;
+    $("#f").onsubmit = e => {
+      e.preventDefault();
+      Object.assign(rasc.dados, {nome:$("#fn").value.trim(), local:$("#fl").value.trim(), data:$("#fd").value, telefone:$("#ft").value.trim(), observacao:$("#fo").value.trim()});
+      if(String(rasc.dados.telefone).replace(/\D/g,"").length < 8){ toast("Informe um telefone válido", {err:1}); return; }
+      store.set("sc_meus_dados", {nome:rasc.dados.nome, local:rasc.dados.local, telefone:rasc.dados.telefone});
+      passo2();
+    };
+  }
+  function passo2(){
+    rasc.passo = 2; salvar();
+    const d = rasc.dados;
+    app.innerHTML = `
+      <div class="card">
+        <div class="steps"><span class="on"></span><span class="on"></span></div>
+        <h2>Itens da lista</h2>
+        <p class="muted small">${esc(d.nome)} · ${esc(d.local)} · ${fmtData(d.data)} · <a href="#" id="ed">editar dados</a></p>
+        <div id="ed-itens"></div>
+      </div>
+      <div class="sticky-bottom no-print"><div class="in">
+        <button class="btn" id="enviar">Enviar lista (<span id="cnt">${rasc.itens.length}</span>)</button>
+      </div></div>`;
+    $("#ed").onclick = e => { e.preventDefault(); passo1(); };
+    itemEditor($("#ed-itens"), rasc.itens, () => { salvar(); $("#cnt").textContent = rasc.itens.length; });
+    $("#enviar").onclick = async () => {
+      if(!rasc.itens.length){ toast("Adicione pelo menos um item", {err:1}); return; }
+      if(!confirm(`Enviar a lista com ${rasc.itens.length} ${rasc.itens.length===1?"item":"itens"} para ${comp.nome}?`)) return;
+      const b = $("#enviar"); busy(b, true, "Enviando...");
+      try{
+        const token = await rpc("sc_criar_lista", {p_usuario: usuario, p_cliente: d, p_itens: rasc.itens});
+        const minhasTodas = store.get("sc_minhas_listas", []);
+        minhasTodas.unshift({usuario, token, local:d.local, data:d.data, comprador:comp.nome});
+        store.set("sc_minhas_listas", minhasTodas.slice(0,50));
+        store.del(rk);
+        location.href = linkLista(token) + "&nova=1";
+      }catch(e){ busy(b,false); toast(e.message, {err:1}); }
+    };
+  }
+  (rasc.passo === 2 && rasc.dados.nome) ? passo2() : passo1();
+}
+
+/* ====== CLIENTE: ver lista / adicionar / relatório (?l=token) ====== */
+async function telaListaCliente(token){
+  setTop(`<h1>🛒 Smart Compras</h1>`);
+  let L;
+  async function carregar(){ L = await rpc("sc_ver_lista", {p_token: token}); }
+  try{ await carregar(); }
+  catch(e){ app.innerHTML = `<div class="card empty">${esc(e.message)}</div>`; return; }
+  const params = new URLSearchParams(location.search);
+  if(params.get("nova")){ history.replaceState(null, "", linkLista(token)); toast("Lista enviada! O comprador já foi avisado.", {ms:6000}); }
+  // garante que a lista fica em "minhas listas" neste aparelho
+  const ml = store.get("sc_minhas_listas", []);
+  if(!ml.some(m => m.token === token)){ ml.unshift({token, local:L.local, data:L.data_lista, comprador:L.comprador_nome}); store.set("sc_minhas_listas", ml.slice(0,50)); }
+
+  function ver(){
+    if(L.status === "finalizada") return relatorio(L, {cliente:true, el:app, token});
+    const t = L.itens.length, c = L.itens.filter(i=>i.status==="comprado").length, x = L.itens.filter(i=>i.status==="indisponivel").length;
+    app.innerHTML = `
+      <div class="card">
+        <div class="t" style="display:flex;justify-content:space-between;gap:8px"><h2 style="margin:0">Sua lista</h2><span class="badge b-${L.status}">${STATUS_CLI[L.status]}</span></div>
+        <div class="kv" style="margin-top:12px">
+          <b>Comprador</b><span>${esc(L.comprador_nome)}</span>
+          <b>Nome</b><span>${esc(L.cliente_nome)}</span>
+          <b>Local</b><span>${esc(L.local)}</span>
+          <b>Data</b><span>${fmtData(L.data_lista)}</span>
+        </div>
+        ${L.status!=="enviada" ? `<div class="bar"><i class="g" style="width:${t?c/t*100:0}%"></i><i class="r" style="width:${t?x/t*100:0}%"></i></div>
+        <p class="small muted" style="margin:6px 0 0">${c} comprados · ${x} indisponíveis · ${t-c-x} pendentes</p>` : ""}
+      </div>
+      <div class="card">
+        <h3>${t} ${t===1?"item":"itens"}</h3>
+        ${L.itens.map(i=>`<div class="item ${i.status}"><div class="info">
+          <div class="p">${esc(i.produto)}${i.adicional?`<span class="tag">adicionado</span>`:""}</div>
+          <div class="q">${fmtQ(i.quantidade)} ${esc(fmtUn(i.quantidade,i.unidade))}</div></div>
+          <span class="small" style="color:${i.status==="comprado"?"var(--ok)":i.status==="indisponivel"?"var(--bad)":"var(--muted)"}">${i.status==="comprado"?"✓ Comprado":i.status==="indisponivel"?"✕ Indisponível":""}</span></div>`).join("")}
+      </div>
+      <div class="card no-print">
+        <p class="small muted" style="margin-top:0">Guarde este link para acompanhar a compra e ver o relatório final.</p>
+        <div class="linkbox"><input readonly value="${esc(linkLista(token))}"><button class="btn sec" id="cp">Copiar</button></div>
+      </div>
+      <div class="sticky-bottom no-print"><div class="in">
+        <button class="btn" id="add">+ Adicionar outros itens</button>
+      </div></div>`;
+    $("#cp").onclick = () => copiar(linkLista(token));
+    $("#add").onclick = adicionar;
+  }
+  function adicionar(){
+    const novos = [];
+    app.innerHTML = `
+      <div class="card">
+        <h2>Adicionar itens</h2>
+        <p class="muted small">Esqueceu algo? Adicione aqui e ${esc(L.comprador_nome)} recebe um alerta na hora.</p>
+        <div id="ed-itens"></div>
+      </div>
+      <div class="sticky-bottom no-print"><div class="in">
+        <button class="btn ghost" id="cancel">Cancelar</button>
+        <button class="btn" id="enviar">Enviar (<span id="cnt">0</span>)</button>
+      </div></div>`;
+    itemEditor($("#ed-itens"), novos, () => $("#cnt").textContent = novos.length);
+    $("#cancel").onclick = ver;
+    $("#enviar").onclick = async () => {
+      if(!novos.length){ toast("Adicione pelo menos um item", {err:1}); return; }
+      const b = $("#enviar"); busy(b, true, "Enviando...");
+      try{
+        await rpc("sc_adicionar_itens", {p_token: token, p_itens: novos});
+        toast(`${novos.length} ${novos.length===1?"item adicionado":"itens adicionados"}. O comprador foi avisado!`, {ms:6000});
+        await carregar(); ver(); scrollTo(0,0);
+      }catch(e){ busy(b,false); toast(e.message, {err:1}); }
+    };
+  }
+  ver();
+  // atualiza status automaticamente enquanto a página está aberta
+  setInterval(async () => {
+    if(document.hidden || $("#ed-itens")) return;
+    try{ const old = JSON.stringify(L); await carregar(); if(JSON.stringify(L) !== old) ver(); }catch(e){}
+  }, 30000);
+}
+
+/* ====== RELATÓRIO (comum) ====== */
+function textoRelatorio(L, token){
+  const g = s => L.itens.filter(i => i.status === s);
+  const linha = i => `• ${fmtQ(i.quantidade)} ${fmtUn(i.quantidade,i.unidade)} - ${i.produto}`;
+  let t = `*Relatório de compras*\n${L.cliente_nome} · ${L.local}\nLista de ${fmtData(L.data_lista)}\n`;
+  const c = g("comprado"), x = g("indisponivel"), p = g("pendente");
+  t += `\n✅ *Comprados (${c.length})*\n${c.map(linha).join("\n") || "—"}\n`;
+  if(x.length) t += `\n❌ *Indisponíveis (${x.length})*\n${x.map(linha).join("\n")}\n`;
+  if(p.length) t += `\n⏳ *Não comprados (${p.length})*\n${p.map(linha).join("\n")}\n`;
+  t += `\nConfira os itens quando as mercadorias chegarem:\n${linkLista(token)}`;
+  return t;
+}
+function relatorio(L, {cliente, el, token, acoes}){
+  const g = s => L.itens.filter(i => i.status === s);
+  const c = g("comprado"), x = g("indisponivel"), p = g("pendente");
+  const ck = store.get("sc_conferido_" + token, {});
+  const linhas = (arr, conf) => `<table>${arr.map(i => `<tr>
+      ${conf ? `<td class="ck no-print"><input type="checkbox" data-id="${i.id}" ${ck[i.id]?"checked":""} aria-label="Recebido"></td>` : ""}
+      <td>${esc(i.produto)}${i.adicional?`<span class="tag">adicionado</span>`:""}</td>
+      <td class="qt">${fmtQ(i.quantidade)} ${esc(fmtUn(i.quantidade,i.unidade))}</td></tr>`).join("")}</table>`;
+  el.innerHTML = `
+    <div class="card report">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+        <h2 style="margin:0">Relatório de compras</h2><span class="badge b-finalizada">Finalizada</span></div>
+      <div class="kv" style="margin-top:12px">
+        <b>Cliente</b><span>${esc(L.cliente_nome)}</span>
+        <b>Local</b><span>${esc(L.local)}</span>
+        <b>Telefone</b><span>${esc(L.telefone)}</span>
+        <b>Data da lista</b><span>${fmtData(L.data_lista)}</span>
+        <b>Comprador</b><span>${esc(L.comprador_nome)}</span>
+        ${L.finalizada_em ? `<b>Finalizada em</b><span>${fmtHora(L.finalizada_em)}</span>` : ""}
+      </div>
+      ${L.observacao ? `<p class="small muted">Obs.: ${esc(L.observacao)}</p>` : ""}
+      <div class="stats">
+        <div class="stat s-ok"><strong>${c.length}</strong>comprados</div>
+        <div class="stat s-bad"><strong>${x.length}</strong>indisponíveis</div>
+        ${p.length ? `<div class="stat s-pen"><strong>${p.length}</strong>pendentes</div>` : ""}
+      </div>
+      ${cliente && c.length ? `<p class="small muted no-print" style="margin-bottom:0">Marque cada item quando ele chegar para conferir a entrega. <span id="confcnt"></span></p>` : ""}
+      <h4 style="color:var(--ok)">✓ Comprados (${c.length})</h4>${c.length ? linhas(c, cliente) : `<p class="muted small">Nenhum.</p>`}
+      ${x.length ? `<h4 style="color:var(--bad)">✕ Indisponíveis (${x.length})</h4>${linhas(x)}` : ""}
+      ${p.length ? `<h4 style="color:var(--warn)">Não comprados (${p.length})</h4>${linhas(p)}` : ""}
+    </div>
+    <div class="card no-print">
+      <div class="btns" style="margin-top:0">
+        ${acoes || ""}
+        <button class="btn sec" id="pdf">🖨 Imprimir / salvar PDF</button>
+      </div>
+    </div>`;
+  el.querySelector("#pdf").onclick = () => print();
+  const upd = () => { const s = el.querySelector("#confcnt"); if(s){ const n = c.filter(i=>ck[i.id]).length; s.textContent = `(${n} de ${c.length} conferidos)`; } };
+  upd();
+  el.querySelectorAll("input[type=checkbox][data-id]").forEach(b => b.onchange = () => { ck[b.dataset.id] = b.checked; store.set("sc_conferido_" + token, ck); upd(); });
+}
+
+/* ====== COMPRADOR ====== */
+let SESS = store.get("sc_sessao");
+let PAINEL = null, ALERTAS_VISTOS = new Set(store.get("sc_alertas_vistos", [])), pollTimer = null, filtro = store.get("sc_filtro", "abertas");
+
+function telaLogin(){
+  setTop(`<h1>🛒 Smart Compras</h1>`);
+  let modo = "entrar";
+  function render(){
+    app.innerHTML = `
+      <div class="card" style="max-width:440px;margin:24px auto">
+        <h2>${modo==="entrar" ? "Entrar no painel" : "Criar conta de comprador"}</h2>
+        <p class="muted small">${modo==="entrar" ? "Painel de quem faz as compras." : "Você vai receber um link para enviar aos seus clientes."}</p>
+        <form id="f">
+          ${modo==="criar" ? `<label for="nm">Seu nome</label><input id="nm" required maxlength="120" autocomplete="name">` : ""}
+          <label for="us">Usuário</label><input id="us" required autocapitalize="none" autocomplete="username" placeholder="ex.: jordan" pattern="[a-zA-Z0-9_\\-]{3,30}" title="3 a 30 letras, números, - ou _">
+          <label for="pw">Senha</label><input id="pw" type="password" required minlength="4" autocomplete="${modo==="entrar"?"current-password":"new-password"}">
+          <div class="btns"><button class="btn block" type="submit" id="go">${modo==="entrar" ? "Entrar" : "Criar conta"}</button></div>
+        </form>
+        <p class="small" style="text-align:center;margin-bottom:0"><a href="#" id="sw">${modo==="entrar" ? "Ainda não tem conta? Criar conta" : "Já tenho conta. Entrar"}</a></p>
+      </div>`;
+    $("#sw").onclick = e => { e.preventDefault(); modo = modo==="entrar" ? "criar" : "entrar"; render(); };
+    $("#f").onsubmit = async e => {
+      e.preventDefault(); const b = $("#go"); busy(b, true);
+      try{
+        const us = $("#us").value.trim().toLowerCase(), pw = $("#pw").value;
+        SESS = modo==="entrar" ? await rpc("sc_entrar", {p_usuario: us, p_senha: pw})
+                               : await rpc("sc_criar_comprador", {p_usuario: us, p_nome: $("#nm").value.trim(), p_senha: pw});
+        store.set("sc_sessao", SESS);
+        location.hash = ""; rotear();
+      }catch(err){ busy(b,false); toast(err.message, {err:1}); }
+    };
+  }
+  render();
+}
+function sair(){ store.del("sc_sessao"); SESS = null; clearInterval(pollTimer); pollTimer = null; location.hash = ""; telaLogin(); }
+
+function topComprador(){
+  const n = PAINEL ? PAINEL.alertas.length : 0;
+  setTop(`<h1 id="home">🛒 Smart Compras</h1>
+    <button class="bell" id="bell" title="Alertas" aria-label="Alertas">🔔${n ? `<span class="n">${n}</span>` : ""}</button>
+    <button id="out" title="Sair">Sair</button>`);
+  $("#home").onclick = () => { location.hash = ""; };
+  $("#bell").onclick = () => { location.hash = "alertas"; };
+  $("#out").onclick = () => { if(confirm("Sair do painel?")) sair(); };
+}
+async function atualizarPainel(silencioso){
+  try{ PAINEL = await rpc("sc_painel", {p_chave: SESS.chave}); }
+  catch(e){ if(/inválido/i.test(e.message)) return sair(); if(!silencioso) toast(e.message, {err:1}); return; }
+  const novos = PAINEL.alertas.filter(a => !ALERTAS_VISTOS.has(a.id));
+  if(novos.length){
+    novos.forEach(a => ALERTAS_VISTOS.add(a.id));
+    store.set("sc_alertas_vistos", [...ALERTAS_VISTOS].slice(-300));
+    if(silencioso){
+      beep();
+      novos.slice(0,3).forEach(a => toast("🔔 " + a.mensagem, {ms:8000, onclick: () => location.hash = "lista/" + a.lista_id}));
+      if("Notification" in window && Notification.permission === "granted"){
+        try{ const n = new Notification("Smart Compras", {body: novos[0].mensagem + (novos.length>1?` (+${novos.length-1})`:""), tag:"sc"});
+          n.onclick = () => { focus(); location.hash = "lista/" + novos[0].lista_id; }; }catch(e){}
+      }
+    }
+  }
+  document.title = (PAINEL.alertas.length ? `(${PAINEL.alertas.length}) ` : "") + "Smart Compras";
+  return PAINEL;
+}
+function iniciarPoll(){
+  if(pollTimer) return;
+  pollTimer = setInterval(async () => {
+    if(!SESS) return;
+    const antes = JSON.stringify(PAINEL);
+    await atualizarPainel(true);
+    if(JSON.stringify(PAINEL) === antes) return;
+    topComprador();
+    const h = location.hash.slice(1);
+    if(h === "" || h === "alertas") rotear(true);
+    else if(h.startsWith("lista/")){
+      const id = h.split("/")[1];
+      if(PAINEL.alertas.some(a => a.lista_id === id)) rotear(true);
+    }
+  }, POLL_MS);
+}
+
+async function telaPainel(){
+  topComprador();
+  const P = PAINEL, L = P.listas;
+  const filtros = {abertas:"Abertas", enviada:"Novas", em_compra:"Em compra", finalizada:"Finalizadas", todas:"Todas"};
+  const vis = L.filter(l => filtro==="todas" || (filtro==="abertas" ? l.status!=="finalizada" : l.status===filtro));
+  const cont = k => L.filter(l => k==="todas" || (k==="abertas" ? l.status!=="finalizada" : l.status===k)).length;
+  const notifOk = !("Notification" in window) || Notification.permission !== "default";
+  app.innerHTML = `
+    <h2 style="margin-top:8px">Olá, ${esc(P.comprador.nome)}</h2>
+    <div class="card">
+      <h3>Seu link para clientes</h3>
+      <p class="small muted" style="margin-top:0">Envie este link. Cada cliente preenche os dados e os itens, e a lista chega aqui.</p>
+      <div class="linkbox"><input readonly value="${esc(linkCliente(P.comprador.usuario))}" id="lk"><button class="btn sec" id="cp">Copiar</button></div>
+      <div class="btns"><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent("Faça sua lista de compras por aqui: " + linkCliente(P.comprador.usuario))}">Enviar pelo WhatsApp</a>
+      ${notifOk ? "" : `<button class="btn ghost" id="notif">🔔 Ativar notificações</button>`}</div>
+    </div>
+    ${P.alertas.length ? `<div class="card" style="border-color:var(--warn)"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <h3 style="margin:0">🔔 ${P.alertas.length} ${P.alertas.length===1?"alerta novo":"alertas novos"}</h3><a href="#alertas">ver</a></div>
+      <div class="alertlist">${P.alertas.slice(0,3).map(a=>`<div class="a" data-l="${a.lista_id}">${esc(a.mensagem)} <span class="muted small">· ${fmtHora(a.criado_em)}</span></div>`).join("")}</div></div>` : ""}
+    <div class="tabs">${Object.entries(filtros).map(([k,v]) => `<button data-f="${k}" class="${filtro===k?"on":""}">${v} (${cont(k)})</button>`).join("")}</div>
+    ${vis.length ? vis.map(l => {
+      const t = +l.total, c = +l.comprados, x = +l.indisponiveis;
+      return `<div class="card lcard" data-l="${l.id}">
+        <div class="t"><div><div class="nm">${esc(l.cliente_nome)}</div>
+          <div class="muted small">${esc(l.local)} · ${fmtData(l.data_lista)}</div></div>
+          <div style="text-align:right">${+l.novos ? `<span class="badge b-novo">novidade</span><br>` : ""}<span class="badge b-${l.status}">${STATUS[l.status]}</span></div></div>
+        <div class="bar"><i class="g" style="width:${t?c/t*100:0}%"></i><i class="r" style="width:${t?x/t*100:0}%"></i></div>
+        <div class="small muted" style="margin-top:6px">${c+x} de ${t} itens verificados${x?` · ${x} indisponíveis`:""}</div>
+      </div>`; }).join("")
+    : `<div class="card empty">${L.length ? "Nenhuma lista neste filtro." : "Nenhuma lista ainda. Envie seu link para um cliente começar."}</div>`}`;
+  $("#cp").onclick = () => copiar(linkCliente(P.comprador.usuario));
+  const nb = $("#notif"); if(nb) nb.onclick = async () => { await Notification.requestPermission(); telaPainel(); };
+  app.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { filtro = b.dataset.f; store.set("sc_filtro", filtro); telaPainel(); });
+  app.querySelectorAll("[data-l]").forEach(c => c.onclick = () => location.hash = "lista/" + c.dataset.l);
+}
+
+async function telaAlertas(){
+  topComprador();
+  const A = PAINEL.alertas;
+  app.innerHTML = `
+    <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <h2 style="margin:0">Alertas</h2>${A.length ? `<button class="btn ghost" id="lidos">Marcar todos como lidos</button>` : ""}</div>
+      <div class="alertlist" style="margin-top:8px">${A.length ? A.map(a => `<div class="a" data-l="${a.lista_id}"><div>${a.tipo==="itens_adicionados"?"➕":"📝"} ${esc(a.mensagem)}</div>
+        <div class="muted small">${fmtHora(a.criado_em)}</div></div>`).join("") : `<div class="empty">Nenhum alerta novo.</div>`}</div>
+    </div>`;
+  app.querySelectorAll("[data-l]").forEach(c => c.onclick = () => location.hash = "lista/" + c.dataset.l);
+  const b = $("#lidos"); if(b) b.onclick = async () => { busy(b,true); await rpc("sc_marcar_alertas_lidos", {p_chave: SESS.chave}); await atualizarPainel(); location.hash = ""; };
+}
+
+let ocultarFeitos = store.get("sc_ocultar", false);
+async function telaListaComprador(id, modoRel){
+  let L;
+  try{ L = await rpc("sc_lista_comprador", {p_chave: SESS.chave, p_lista: id}); }
+  catch(e){ app.innerHTML = `<div class="card empty">${esc(e.message)}</div>`; return; }
+  await atualizarPainel(true); topComprador();
+
+  if(L.status === "finalizada" || modoRel){
+    const wa = foneWa(L.telefone);
+    relatorio(L, {cliente:false, el:app, token:L.token, acoes:`
+      <a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent(textoRelatorio(L, L.token))}">Enviar relatório no WhatsApp</a>
+      <button class="btn sec" id="cpr">Copiar link do relatório</button>
+      <button class="btn ghost" id="reab">Reabrir lista</button>
+      <button class="btn ghost" id="voltar">← Voltar</button>`});
+    $("#cpr").onclick = () => copiar(linkLista(L.token));
+    $("#voltar").onclick = () => location.hash = "";
+    $("#reab").onclick = async () => { if(!confirm("Reabrir esta lista para continuar marcando itens?")) return;
+      await rpc("sc_definir_status", {p_chave: SESS.chave, p_lista: id, p_status: "em_compra"}); rotear(true); };
+    return;
+  }
+
+  function render(){
+    const t = L.itens.length, c = L.itens.filter(i=>i.status==="comprado").length, x = L.itens.filter(i=>i.status==="indisponivel").length;
+    const itens = ocultarFeitos ? L.itens.filter(i => i.status==="pendente") : L.itens;
+    const wa = foneWa(L.telefone);
+    app.innerHTML = `
+      <p style="margin:4px 0"><a href="#">← Listas</a></p>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+          <div><h2 style="margin:0">${esc(L.cliente_nome)}</h2><div class="muted small">${esc(L.local)} · ${fmtData(L.data_lista)}</div></div>
+          <span class="badge b-${L.status}">${STATUS[L.status]}</span></div>
+        <p class="small" style="margin:8px 0 0">📞 ${esc(L.telefone)} · <a target="_blank" rel="noopener" href="https://wa.me/${wa}">WhatsApp</a></p>
+        ${L.observacao ? `<p class="small muted" style="margin:6px 0 0">Obs.: ${esc(L.observacao)}</p>` : ""}
+        <div class="bar"><i class="g" style="width:${t?c/t*100:0}%"></i><i class="r" style="width:${t?x/t*100:0}%"></i></div>
+        <p class="small muted" style="margin:6px 0 0">${c} comprados · ${x} indisponíveis · ${t-c-x} pendentes</p>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <h3 style="margin:0">Itens</h3>
+          <label class="chk" style="margin:0;font-weight:500"><input type="checkbox" id="oc" ${ocultarFeitos?"checked":""}> Só pendentes</label></div>
+        <p class="small muted" style="margin:4px 0 0">✓ comprado · ✕ indisponível. Toque de novo para desfazer.</p>
+        <div style="margin-top:4px">${itens.length ? itens.map(i => `<div class="item ${i.status}" data-i="${i.id}"><div class="info">
+            <div class="p">${esc(i.produto)}${i.adicional?`<span class="tag">adicionado depois</span>`:""}</div>
+            <div class="q">${fmtQ(i.quantidade)} ${esc(fmtUn(i.quantidade,i.unidade))}${i.status==="indisponivel"?` · <span style="color:var(--bad)">indisponível</span>`:""}</div></div>
+            <button class="ib ${i.status==="indisponivel"?"on-bad":""}" data-s="indisponivel" title="Indisponível" aria-label="Indisponível">✕</button>
+            <button class="ib ${i.status==="comprado"?"on-ok":""}" data-s="comprado" title="Comprado" aria-label="Comprado">✓</button>
+          </div>`).join("") : `<div class="empty">Tudo verificado! 🎉</div>`}</div>
+      </div>
+      <div class="card no-print"><div class="btns" style="margin-top:0">
+        <button class="btn danger" id="del">Excluir lista</button>
+      </div></div>
+      <div class="sticky-bottom no-print"><div class="in">
+        <button class="btn" id="fin">Finalizar compra e gerar relatório</button>
+      </div></div>`;
+    $("#oc").onchange = e => { ocultarFeitos = e.target.checked; store.set("sc_ocultar", ocultarFeitos); render(); };
+    app.querySelectorAll(".item[data-i] .ib").forEach(b => b.onclick = async () => {
+      const it = L.itens.find(i => i.id === b.closest(".item").dataset.i);
+      const novo = it.status === b.dataset.s ? "pendente" : b.dataset.s;
+      const ant = it.status; it.status = novo; if(L.status === "enviada") L.status = "em_compra"; render();
+      try{ await rpc("sc_marcar_item", {p_chave: SESS.chave, p_item: it.id, p_status: novo}); }
+      catch(e){ it.status = ant; render(); toast(e.message, {err:1}); }
+    });
+    $("#del").onclick = async () => {
+      if(!confirm(`Excluir a lista de ${L.cliente_nome}? Isso não pode ser desfeito.`)) return;
+      await rpc("sc_excluir_lista", {p_chave: SESS.chave, p_lista: id}); toast("Lista excluída"); location.hash = "";
+    };
+    $("#fin").onclick = async () => {
+      const pend = L.itens.filter(i => i.status === "pendente");
+      let msg = "Finalizar a compra e gerar o relatório?";
+      if(pend.length) msg = `${pend.length} ${pend.length===1?"item ainda está pendente e será marcado":"itens ainda estão pendentes e serão marcados"} como indisponível. Finalizar mesmo assim?`;
+      if(!confirm(msg)) return;
+      const b = $("#fin"); busy(b, true, "Finalizando...");
+      try{
+        await Promise.all(pend.map(i => rpc("sc_marcar_item", {p_chave: SESS.chave, p_item: i.id, p_status: "indisponivel"})));
+        await rpc("sc_definir_status", {p_chave: SESS.chave, p_lista: id, p_status: "finalizada"});
+        toast("Compra finalizada! Envie o relatório ao cliente.");
+        rotear(true); scrollTo(0,0);
+      }catch(e){ busy(b,false); toast(e.message, {err:1}); }
+    };
+  }
+  render();
+}
+
+/* ====== roteamento ====== */
+async function rotear(semRolar){
+  const q = new URLSearchParams(location.search);
+  if(q.get("c")) return telaNovaLista(q.get("c"));
+  if(q.get("l")) return telaListaCliente(q.get("l"));
+  if(!SESS) return telaLogin();
+  if(!PAINEL) await atualizarPainel();
+  if(!SESS) return;
+  iniciarPoll();
+  const h = location.hash.slice(1);
+  if(h.startsWith("lista/")) await telaListaComprador(h.split("/")[1]);
+  else if(h === "alertas") await telaAlertas();
+  else await telaPainel();
+  if(!semRolar) scrollTo(0,0);
+}
+addEventListener("hashchange", () => rotear());
+document.addEventListener("visibilitychange", () => { if(!document.hidden && SESS && !location.search) atualizarPainel(true).then(() => topComprador()); });
+rotear();
+</script>
+</body>
+</html>
