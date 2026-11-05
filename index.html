@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Smart Compras">
-<meta name="description" content="Sistema de lista de compras compartilhada entre comprador e clientes.">
+<meta name="description" content="Orçamento de peças para quadriciclos Honda TRX 520/420, enviado pelo mecânico.">
 <style>
 :root{
   --bg:#f3f5fa;--card:#fff;--ink:#16211f;--muted:#5f6d6a;--line:#e1e6e4;
@@ -107,8 +107,15 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--pri);outline-off
 .stat{border-radius:12px;padding:10px 6px;text-align:center;font-size:14px;min-width:0}
 .stat strong{display:block;font-size:22px}
 .s-ok{background:var(--ok-soft);color:var(--ok)}.s-bad{background:var(--bad-soft);color:var(--bad)}.s-pen{background:var(--warn-soft);color:var(--warn)}
-.newitem{display:grid;grid-template-columns:1fr 90px 120px auto;gap:8px;align-items:end}
-@media (max-width:560px){.newitem{grid-template-columns:1fr 1fr}.newitem .full{grid-column:1/-1}}
+.newitem{display:grid;grid-template-columns:1fr 90px 120px;gap:8px;align-items:end}
+.newitem .full{grid-column:1/-1}
+@media (max-width:560px){.newitem{grid-template-columns:1fr 1fr}.newitem .ref{grid-column:1/-1}}
+.ref-t{color:var(--muted);font-weight:500;font-size:14px}
+.seg{display:flex;gap:8px}
+.seg label{flex:1;margin:0;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:10px;padding:12px 8px;font-weight:600;cursor:pointer;background:var(--card)}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label:has(input:checked){background:var(--pri);border-color:var(--pri);color:var(--pri-ink)}
+.seg label:has(input:focus-visible){outline:2px solid var(--pri);outline-offset:2px}
 .draft .item{padding:8px 0}
 .x{border:0;background:transparent;color:var(--bad);font-size:20px;cursor:pointer;padding:6px 10px}
 .linkbox{display:flex;gap:8px}
@@ -158,7 +165,9 @@ const SUPABASE_URL = "https://ivqrabkzdzcgtqkhdrlx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_DbfKnRExNJZIAWLiBTVWbg_uUcTeqUB";
 const POLL_MS = 15000;
 const LOGO = `<img src="img/icon-192.png" alt=""><span>Smart <b>Compras</b></span>`;
-const UNIDADES = ["Unidade","Pacote","Fardo","Saco","Caixa","Kg"];
+const UNIDADES = ["Unidade","Par","Jogo","Kit","Litro"];
+const MODELOS = ["TRX 520","TRX 420"];
+const MARCHAS = ["Na mão","No pé"];
 
 /* ====== utilidades ====== */
 const $ = s => document.querySelector(s);
@@ -192,28 +201,31 @@ const fmtQ = q => Number(q).toLocaleString("pt-BR",{maximumFractionDigits:3});
 function fmtUn(q, u){
   const n = Number(q);
   if(n === 1 || u === "Kg") return u;
-  const pl = {Unidade:"Unidades",Pacote:"Pacotes",Fardo:"Fardos",Saco:"Sacos",Caixa:"Caixas"};
+  const pl = {Unidade:"Unidades",Par:"Pares",Jogo:"Jogos",Kit:"Kits",Litro:"Litros",Pacote:"Pacotes",Fardo:"Fardos",Saco:"Sacos",Caixa:"Caixas"};
   return pl[u] || u;
 }
 const FEITO = i => i.status === "comprado" || i.status === "parcial";
+const refTxt = i => i.referencia ? ` <span class="ref-t">· Ref. ${esc(i.referencia)}</span>` : "";
+const nomePeca = i => esc(i.produto) + refTxt(i);
 const qtdTxt = i => `${fmtQ(i.quantidade)} ${fmtUn(i.quantidade,i.unidade)}`;
 const qtdComprTxt = i => i.status === "parcial" ? `${fmtQ(i.qtd_comprada)} de ${fmtQ(i.quantidade)} ${fmtUn(i.quantidade,i.unidade)}` : qtdTxt(i);
 function detalheItem(i){
   const d = [];
   if(i.observacao) d.push(`<div class="obs">📝 ${esc(i.observacao)}</div>`);
-  if(i.status === "parcial") d.push(`<div class="obs" style="color:var(--warn)">½ Comprado ${esc(qtdComprTxt(i))}</div>`);
-  if(i.substituto) d.push(`<div class="obs" style="color:var(--pri)">↪ Substituto: ${esc(i.substituto)}</div>`);
+  if(i.status === "parcial") d.push(`<div class="obs" style="color:var(--warn)">½ Parcial: ${esc(qtdComprTxt(i))}</div>`);
+  if(i.substituto) d.push(`<div class="obs" style="color:var(--pri)">↪ Alternativa: ${esc(i.substituto)}</div>`);
   return d.join("");
 }
 function statusSpan(i){
-  const m = {comprado:["var(--ok)","✓ Comprado"], parcial:["var(--warn)","½ Parcial"], indisponivel:["var(--bad)","✕ Indisponível"]}[i.status];
+  const m = {comprado:["var(--ok)","✓ Tem"], parcial:["var(--warn)","½ Parcial"], indisponivel:["var(--bad)","✕ Não tem"]}[i.status];
   return m ? `<span class="small" style="color:${m[0]};white-space:nowrap">${m[1]}</span>` : "";
 }
 const fmtData = d => { if(!d) return ""; const [y,m,dd] = String(d).slice(0,10).split("-"); return `${dd}/${m}/${y}`; };
 const fmtHora = d => new Date(d).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
 const hoje = () => { const d = new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
-const STATUS = {enviada:"Nova", em_compra:"Em compra", finalizada:"Finalizada"};
-const STATUS_CLI = {enviada:"Recebida pelo comprador", em_compra:"Compra em andamento", finalizada:"Compra finalizada"};
+const STATUS = {enviada:"Novo", em_compra:"Em análise", finalizada:"Finalizado"};
+const STATUS_CLI = {enviada:"Recebido", em_compra:"Em análise", finalizada:"Orçamento finalizado"};
+function motoTxt(L){ return [L.modelo, L.marcha ? "marcha " + L.marcha.toLowerCase() : ""].filter(Boolean).join(" · "); }
 function foneWa(t){
   let d = String(t||"").replace(/\D/g,"");
   if(d.startsWith("0")) d = d.replace(/^0+/,"");
@@ -246,33 +258,34 @@ function itemEditor(container, itens, onChange){
   function render(){
     container.innerHTML = `
       <div class="newitem">
-        <div class="full"><label for="np">Produto</label><input id="np" placeholder="Ex.: Arroz 5kg" autocomplete="off" maxlength="200"></div>
-        <div><label for="nq">Quantidade</label><input id="nq" type="number" inputmode="decimal" min="0" step="any" value="1"></div>
+        <div class="full"><label for="np">Nome da peça</label><input id="np" placeholder="Ex.: Kit relação (coroa, pinhão e corrente)" autocomplete="off" maxlength="200"></div>
+        <div class="ref"><label for="nr">Referência <span class="muted" style="font-weight:400">(código da peça)</span></label><input id="nr" placeholder="Ex.: 06455-HP5-601" autocomplete="off" maxlength="80"></div>
+        <div><label for="nq">Qtd.</label><input id="nq" type="number" inputmode="decimal" min="0" step="any" value="1"></div>
         <div><label for="nu">Tipo</label><select id="nu">${UNIDADES.map(u=>`<option>${u}</option>`).join("")}</select></div>
-        <div class="full"><label for="no">Observação <span class="muted" style="font-weight:400">(opcional: marca, tamanho, "se não tiver, pode ser...")</span></label><input id="no" maxlength="300" autocomplete="off"></div>
+        <div class="full"><label for="no">Observação <span class="muted" style="font-weight:400">(opcional: original/paralela, lado, medida...)</span></label><input id="no" maxlength="300" autocomplete="off"></div>
         <div class="full"><button class="btn block" id="nadd" type="button">+ Adicionar</button></div>
       </div>
       <div class="draft" style="margin-top:12px">
         ${itens.length ? itens.map((it,i)=>`
-          <div class="item"><div class="info"><div class="p">${esc(it.produto)}</div>
+          <div class="item"><div class="info"><div class="p">${nomePeca(it)}</div>
           <div class="q">${fmtQ(it.quantidade)} ${esc(fmtUn(it.quantidade,it.unidade))}</div>${it.observacao?`<div class="obs">📝 ${esc(it.observacao)}</div>`:""}</div>
           <button class="x" data-i="${i}" title="Remover" aria-label="Remover">✕</button></div>`).join("")
-        : `<div class="empty small">Nenhum item ainda. Adicione o primeiro acima.</div>`}
+        : `<div class="empty small">Nenhuma peça ainda. Adicione a primeira acima.</div>`}
       </div>`;
-    const np = container.querySelector("#np"), nq = container.querySelector("#nq"), nu = container.querySelector("#nu"), no = container.querySelector("#no");
+    const np = container.querySelector("#np"), nr = container.querySelector("#nr"), nq = container.querySelector("#nq"), nu = container.querySelector("#nu"), no = container.querySelector("#no");
     const last = store.get("sc_ultima_unidade");
     if(last && UNIDADES.includes(last)) nu.value = last;
     const add = () => {
       const produto = np.value.trim(); const quantidade = parseFloat(String(nq.value).replace(",", "."));
       if(!produto){ np.focus(); return; }
       if(!(quantidade > 0)){ toast("Informe uma quantidade válida", {err:1}); nq.focus(); return; }
-      itens.push({produto, quantidade, unidade: nu.value, observacao: no.value.trim()});
+      itens.push({produto, referencia: nr.value.trim(), quantidade, unidade: nu.value, observacao: no.value.trim()});
       store.set("sc_ultima_unidade", nu.value);
       onChange && onChange(); render();
       container.querySelector("#np").focus();
     };
     container.querySelector("#nadd").onclick = add;
-    np.onkeydown = nq.onkeydown = no.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); add(); } };
+    np.onkeydown = nr.onkeydown = nq.onkeydown = no.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); add(); } };
     container.querySelectorAll(".x").forEach(b => b.onclick = () => { itens.splice(+b.dataset.i,1); onChange && onChange(); render(); });
   }
   render();
@@ -284,7 +297,7 @@ async function telaNovaLista(usuario){
   let comp;
   try{ comp = await rpc("sc_info_comprador", {p_usuario: usuario}); }
   catch(e){ app.innerHTML = `<div class="card empty">${esc(e.message)}</div>`; return; }
-  if(!comp){ app.innerHTML = `<div class="card empty">Este link não é válido. Peça um novo link ao comprador.</div>`; return; }
+  if(!comp){ app.innerHTML = `<div class="card empty">Este link não é válido. Peça um novo link a quem vai receber o orçamento.</div>`; return; }
 
   const rk = "sc_rascunho_" + usuario;
   const rasc = store.get(rk, {dados: store.get("sc_meus_dados", {}), itens: [], passo: 1});
@@ -296,40 +309,45 @@ async function telaNovaLista(usuario){
     history.replaceState(null, "", linkCliente(usuario));
     try{
       const ant = await rpc("sc_ver_lista", {p_token: rep});
-      rasc.itens = ant.itens.map(i => ({produto:i.produto, quantidade:Number(i.quantidade), unidade:i.unidade, observacao:i.observacao||""}));
+      rasc.itens = ant.itens.map(i => ({produto:i.produto, referencia:i.referencia||"", quantidade:Number(i.quantidade), unidade:i.unidade, observacao:i.observacao||""}));
       rasc.dados.data = hoje(); rasc.passo = 1; salvar();
-      setTimeout(() => toast(`${rasc.itens.length} itens copiados da lista de ${fmtData(ant.data_lista)}. Confira seus dados e os itens antes de enviar.`, {ms:7000}), 50);
-    }catch(e){ toast("Não foi possível copiar a lista anterior.", {err:1}); }
+      setTimeout(() => toast(`${rasc.itens.length} peças copiadas do orçamento de ${fmtData(ant.data_lista)}. Confira os dados e as peças antes de enviar.`, {ms:7000}), 50);
+    }catch(e){ toast("Não foi possível copiar o orçamento anterior.", {err:1}); }
   }
 
   function passo1(){
     rasc.passo = 1; salvar();
     const d = rasc.dados;
+    const seg = (nome, ops, val) => `<div class="seg" role="radiogroup">${ops.map(o => `<label><input type="radio" name="${nome}" value="${esc(o)}" ${val===o?"checked":""} required>${esc(o)}</label>`).join("")}</div>`;
     app.innerHTML = `
       <div class="card">
         <img class="hero" src="img/fundo-m.jpg" alt="Smart Compras">
         <div class="steps"><span class="on"></span><span></span></div>
-        <h2>Lista de compras para ${esc(comp.nome)}</h2>
-        <p class="muted small">Preencha seus dados e depois adicione os produtos.</p>
+        <h2>Orçamento de peças Honda TRX para ${esc(comp.nome)}</h2>
+        <p class="muted small">Preencha os dados do serviço e depois liste as peças com nome e referência.</p>
         <form id="f">
-          <label for="fn">Seu nome</label><input id="fn" required maxlength="120" value="${esc(d.nome)}" autocomplete="name">
-          <label for="fl">Local ou garimpo</label><input id="fl" required maxlength="160" value="${esc(d.local)}" placeholder="Ex.: Garimpo São Domingos">
-          <div class="row">
-            <div><label for="fd">Data da lista</label><input id="fd" type="date" required value="${esc(d.data)}"></div>
-            <div><label for="ft">Telefone (WhatsApp)</label><input id="ft" type="tel" required maxlength="30" value="${esc(d.telefone)}" placeholder="(93) 99999-9999" autocomplete="tel"></div>
-          </div>
-          <label for="fo">Observação <span class="muted">(opcional)</span></label><textarea id="fo" rows="2" maxlength="500">${esc(d.observacao)}</textarea>
-          <div class="btns"><button class="btn block" type="submit">Continuar para os itens${rasc.itens.length ? ` (${rasc.itens.length})` : ""} →</button></div>
+          <label for="fn">Nome do mecânico</label><input id="fn" required maxlength="120" value="${esc(d.nome)}" autocomplete="name">
+          <label for="fl">Garimpo ou região</label><input id="fl" required maxlength="160" value="${esc(d.local)}" placeholder="Ex.: Garimpo São Domingos">
+          <label>Modelo da moto</label>${seg("fm", MODELOS, d.modelo)}
+          <label>Marcha</label>${seg("fg", MARCHAS, d.marcha)}
+          <label for="fc">Nome do cliente <span class="muted" style="font-weight:400">(dono da moto)</span></label><input id="fc" required maxlength="120" value="${esc(d.cliente_final)}">
+          <label for="ft">Seu WhatsApp <span class="muted" style="font-weight:400">(opcional, para receber o orçamento)</span></label><input id="ft" type="tel" maxlength="30" value="${esc(d.telefone)}" placeholder="(93) 99999-9999" autocomplete="tel">
+          <label for="fo">Observação <span class="muted" style="font-weight:400">(opcional: ano, chassi, defeito...)</span></label><textarea id="fo" rows="2" maxlength="500">${esc(d.observacao)}</textarea>
+          <div class="btns"><button class="btn block" type="submit">Continuar para as peças${rasc.itens.length ? ` (${rasc.itens.length})` : ""} →</button></div>
         </form>
       </div>
-      ${minhas.length ? `<div class="card"><h3>Suas listas enviadas</h3>${minhas.slice(0,10).map(m=>`
-        <div class="item"><div class="info"><div class="p">${esc(m.local)} · ${fmtData(m.data)}</div></div>
-        <a class="btn ghost" href="${esc(linkCliente(usuario))}&repetir=${esc(m.token)}" title="Fazer uma nova lista com os mesmos itens">↻ Repetir</a>
+      ${minhas.length ? `<div class="card"><h3>Seus orçamentos enviados</h3>${minhas.slice(0,10).map(m=>`
+        <div class="item"><div class="info"><div class="p">${esc(m.cliente_final || m.local)}${m.modelo ? ` · ${esc(m.modelo)}` : ""}</div><div class="q">${esc(m.local)} · ${fmtData(m.data)}</div></div>
+        <a class="btn ghost" href="${esc(linkCliente(usuario))}&repetir=${esc(m.token)}" title="Fazer um novo orçamento com as mesmas peças">↻ Repetir</a>
         <a class="btn sec" href="${esc(linkLista(m.token))}">Abrir</a></div>`).join("")}</div>` : ""}`;
     $("#f").onsubmit = e => {
       e.preventDefault();
-      Object.assign(rasc.dados, {nome:$("#fn").value.trim(), local:$("#fl").value.trim(), data:$("#fd").value, telefone:$("#ft").value.trim(), observacao:$("#fo").value.trim()});
-      if(String(rasc.dados.telefone).replace(/\D/g,"").length < 8){ toast("Informe um telefone válido", {err:1}); return; }
+      const rv = n => (app.querySelector(`input[name=${n}]:checked`) || {}).value || "";
+      Object.assign(rasc.dados, {nome:$("#fn").value.trim(), local:$("#fl").value.trim(), modelo:rv("fm"), marcha:rv("fg"),
+        cliente_final:$("#fc").value.trim(), data:hoje(), telefone:$("#ft").value.trim(), observacao:$("#fo").value.trim()});
+      if(!rasc.dados.modelo || !rasc.dados.marcha){ toast("Escolha o modelo e a marcha", {err:1}); return; }
+      const tel = String(rasc.dados.telefone).replace(/\D/g,"");
+      if(tel && tel.length < 8){ toast("Informe um WhatsApp válido ou deixe em branco", {err:1}); return; }
       store.set("sc_meus_dados", {nome:rasc.dados.nome, local:rasc.dados.local, telefone:rasc.dados.telefone});
       passo2();
     };
@@ -340,23 +358,23 @@ async function telaNovaLista(usuario){
     app.innerHTML = `
       <div class="card">
         <div class="steps"><span class="on"></span><span class="on"></span></div>
-        <h2>Itens da lista</h2>
-        <p class="muted small">${esc(d.nome)} · ${esc(d.local)} · ${fmtData(d.data)} · <a href="#" id="ed">editar dados</a></p>
+        <h2>Peças do orçamento</h2>
+        <p class="muted small">Cliente ${esc(d.cliente_final)} · ${esc(motoTxt(d))} · ${esc(d.local)} · <a href="#" id="ed">editar dados</a></p>
         <div id="ed-itens"></div>
       </div>
       <div class="sticky-bottom no-print"><div class="in">
-        <button class="btn" id="enviar">Enviar lista (<span id="cnt">${rasc.itens.length}</span>)</button>
+        <button class="btn" id="enviar">Enviar orçamento (<span id="cnt">${rasc.itens.length}</span>)</button>
       </div></div>`;
     $("#ed").onclick = e => { e.preventDefault(); passo1(); };
     itemEditor($("#ed-itens"), rasc.itens, () => { salvar(); $("#cnt").textContent = rasc.itens.length; });
     $("#enviar").onclick = async () => {
-      if(!rasc.itens.length){ toast("Adicione pelo menos um item", {err:1}); return; }
-      if(!confirm(`Enviar a lista com ${rasc.itens.length} ${rasc.itens.length===1?"item":"itens"} para ${comp.nome}?`)) return;
+      if(!rasc.itens.length){ toast("Adicione pelo menos uma peça", {err:1}); return; }
+      if(!confirm(`Enviar o orçamento com ${rasc.itens.length} ${rasc.itens.length===1?"peça":"peças"} para ${comp.nome}?`)) return;
       const b = $("#enviar"); busy(b, true, "Enviando...");
       try{
         const token = await rpc("sc_criar_lista", {p_usuario: usuario, p_cliente: d, p_itens: rasc.itens});
         const minhasTodas = store.get("sc_minhas_listas", []);
-        minhasTodas.unshift({usuario, token, local:d.local, data:d.data, comprador:comp.nome});
+        minhasTodas.unshift({usuario, token, local:d.local, data:d.data, comprador:comp.nome, cliente_final:d.cliente_final, modelo:d.modelo});
         store.set("sc_minhas_listas", minhasTodas.slice(0,50));
         store.del(rk);
         location.href = linkLista(token) + "&nova=1";
@@ -374,41 +392,36 @@ async function telaListaCliente(token){
   try{ await carregar(); }
   catch(e){ app.innerHTML = `<div class="card empty">${esc(e.message)}</div>`; return; }
   const params = new URLSearchParams(location.search);
-  if(params.get("nova")){ history.replaceState(null, "", linkLista(token)); toast("Lista enviada! O comprador já foi avisado.", {ms:6000}); }
+  if(params.get("nova")){ history.replaceState(null, "", linkLista(token)); toast("Orçamento enviado! Já avisamos quem vai responder.", {ms:6000}); }
   // garante que a lista fica em "minhas listas" neste aparelho
   const ml = store.get("sc_minhas_listas", []);
-  if(!ml.some(m => m.token === token)){ ml.unshift({token, local:L.local, data:L.data_lista, comprador:L.comprador_nome}); store.set("sc_minhas_listas", ml.slice(0,50)); }
+  if(!ml.some(m => m.token === token)){ ml.unshift({token, local:L.local, data:L.data_lista, comprador:L.comprador_nome, cliente_final:L.cliente_final, modelo:L.modelo}); store.set("sc_minhas_listas", ml.slice(0,50)); }
 
   const minha = store.get("sc_minhas_listas", []).find(m => m.token === token && m.usuario);
-  const btnRepetir = minha ? `<a class="btn ghost" href="${esc(linkCliente(minha.usuario))}&repetir=${esc(token)}">↻ Nova lista com estes itens</a>` : "";
+  const btnRepetir = minha ? `<a class="btn ghost" href="${esc(linkCliente(minha.usuario))}&repetir=${esc(token)}">↻ Novo orçamento com estas peças</a>` : "";
   function ver(){
     if(L.status === "finalizada") return relatorio(L, {cliente:true, el:app, token, acoes: btnRepetir});
     const t = L.itens.length, c = L.itens.filter(FEITO).length, x = L.itens.filter(i=>i.status==="indisponivel").length;
     app.innerHTML = `
       <div class="card">
-        <div class="t" style="display:flex;justify-content:space-between;gap:8px"><h2 style="margin:0">Sua lista</h2><span class="badge b-${L.status}">${STATUS_CLI[L.status]}</span></div>
-        <div class="kv" style="margin-top:12px">
-          <b>Comprador</b><span>${esc(L.comprador_nome)}</span>
-          <b>Nome</b><span>${esc(L.cliente_nome)}</span>
-          <b>Local</b><span>${esc(L.local)}</span>
-          <b>Data</b><span>${fmtData(L.data_lista)}</span>
-        </div>
+        <div class="t" style="display:flex;justify-content:space-between;gap:8px"><h2 style="margin:0">Seu orçamento</h2><span class="badge b-${L.status}">${STATUS_CLI[L.status]}</span></div>
+        <div class="kv" style="margin-top:12px">${kvOrcamento(L)}</div>
         ${L.status!=="enviada" ? `<div class="bar"><i class="g" style="width:${t?c/t*100:0}%"></i><i class="r" style="width:${t?x/t*100:0}%"></i></div>
-        <p class="small muted" style="margin:6px 0 0">${c} comprados · ${x} indisponíveis · ${t-c-x} pendentes</p>` : ""}
+        <p class="small muted" style="margin:6px 0 0">${c} tem · ${x} não tem · ${t-c-x} pendentes</p>` : ""}
       </div>
       <div class="card">
-        <h3>${t} ${t===1?"item":"itens"}</h3>
+        <h3>${t} ${t===1?"peça":"peças"}</h3>
         ${L.itens.map(i=>`<div class="item ${i.status}"><div class="info">
-          <div class="p">${esc(i.produto)}${i.adicional?`<span class="tag">adicionado</span>`:""}</div>
+          <div class="p">${nomePeca(i)}${i.adicional?`<span class="tag">adicionado</span>`:""}</div>
           <div class="q">${esc(qtdTxt(i))}</div>${detalheItem(i)}</div>
           ${statusSpan(i)}</div>`).join("")}
       </div>
       <div class="card no-print">
-        <p class="small muted" style="margin-top:0">Guarde este link para acompanhar a compra e ver o relatório final.</p>
+        <p class="small muted" style="margin-top:0">Guarde este link para acompanhar o orçamento e ver o resultado final.</p>
         <div class="linkbox"><input readonly value="${esc(linkLista(token))}"><button class="btn sec" id="cp">Copiar</button></div>
       </div>
       <div class="sticky-bottom no-print"><div class="in">
-        <button class="btn" id="add">+ Adicionar outros itens</button>
+        <button class="btn" id="add">+ Adicionar outras peças</button>
       </div></div>`;
     $("#cp").onclick = () => copiar(linkLista(token));
     $("#add").onclick = adicionar;
@@ -417,8 +430,8 @@ async function telaListaCliente(token){
     const novos = [];
     app.innerHTML = `
       <div class="card">
-        <h2>Adicionar itens</h2>
-        <p class="muted small">Esqueceu algo? Adicione aqui e ${esc(L.comprador_nome)} recebe um alerta na hora.</p>
+        <h2>Adicionar peças</h2>
+        <p class="muted small">Esqueceu alguma peça? Adicione aqui e ${esc(L.comprador_nome)} recebe um alerta na hora.</p>
         <div id="ed-itens"></div>
       </div>
       <div class="sticky-bottom no-print"><div class="in">
@@ -428,11 +441,11 @@ async function telaListaCliente(token){
     itemEditor($("#ed-itens"), novos, () => $("#cnt").textContent = novos.length);
     $("#cancel").onclick = ver;
     $("#enviar").onclick = async () => {
-      if(!novos.length){ toast("Adicione pelo menos um item", {err:1}); return; }
+      if(!novos.length){ toast("Adicione pelo menos uma peça", {err:1}); return; }
       const b = $("#enviar"); busy(b, true, "Enviando...");
       try{
         await rpc("sc_adicionar_itens", {p_token: token, p_itens: novos});
-        toast(`${novos.length} ${novos.length===1?"item adicionado":"itens adicionados"}. O comprador foi avisado!`, {ms:6000});
+        toast(`${novos.length} ${novos.length===1?"peça adicionada":"peças adicionadas"}. ${L.comprador_nome} foi avisado!`, {ms:6000});
         await carregar(); ver(); scrollTo(0,0);
       }catch(e){ busy(b,false); toast(e.message, {err:1}); }
     };
@@ -446,15 +459,28 @@ async function telaListaCliente(token){
 }
 
 /* ====== RELATÓRIO (comum) ====== */
+function kvOrcamento(L, extra){
+  const kv = [["Mecânico", L.cliente_nome], ["Garimpo / região", L.local]];
+  if(L.cliente_final) kv.push(["Cliente", L.cliente_final]);
+  if(L.modelo) kv.push(["Modelo", L.modelo]);
+  if(L.marcha) kv.push(["Marcha", L.marcha]);
+  if(L.telefone) kv.push(["WhatsApp", L.telefone]);
+  kv.push(["Data", fmtData(L.data_lista)], ["Enviado para", L.comprador_nome]);
+  return kv.concat(extra||[]).map(([k,v]) => `<b>${k}</b><span>${esc(v)}</span>`).join("");
+}
 function textoRelatorio(L, token){
   const g = s => L.itens.filter(i => i.status === s);
-  const linha = i => `• ${qtdComprTxt(i)} - ${i.produto}${i.status==="parcial"?" (parcial)":""}${i.substituto?`\n   ↪ substituto: ${i.substituto}`:""}`;
-  let t = `*Relatório de compras*\n${L.cliente_nome} · ${L.local}\nLista de ${fmtData(L.data_lista)}\n`;
+  const linha = i => `• ${qtdComprTxt(i)} - ${i.produto}${i.referencia?` (Ref. ${i.referencia})`:""}${i.status==="parcial"?" (parcial)":""}${i.substituto?`\n   ↪ alternativa: ${i.substituto}`:""}`;
+  let t = `*Orçamento de peças Honda ${L.modelo || "TRX"}*\n`;
+  if(L.cliente_final) t += `Cliente: ${L.cliente_final}\n`;
+  t += `Mecânico: ${L.cliente_nome} · ${L.local}\n`;
+  if(L.marcha) t += `Marcha: ${L.marcha}\n`;
+  t += `Data: ${fmtData(L.data_lista)}\n`;
   const c = L.itens.filter(FEITO), x = g("indisponivel"), p = g("pendente");
-  t += `\n✅ *Comprados (${c.length})*\n${c.map(linha).join("\n") || "—"}\n`;
-  if(x.length) t += `\n❌ *Indisponíveis (${x.length})*\n${x.map(linha).join("\n")}\n`;
-  if(p.length) t += `\n⏳ *Não comprados (${p.length})*\n${p.map(linha).join("\n")}\n`;
-  t += `\nConfira os itens quando as mercadorias chegarem:\n${linkLista(token)}`;
+  t += `\n✅ *Tem (${c.length})*\n${c.map(linha).join("\n") || "—"}\n`;
+  if(x.length) t += `\n❌ *Não tem (${x.length})*\n${x.map(linha).join("\n")}\n`;
+  if(p.length) t += `\n⏳ *Não verificadas (${p.length})*\n${p.map(linha).join("\n")}\n`;
+  t += `\nVeja o orçamento completo:\n${linkLista(token)}`;
   return t;
 }
 function relatorio(L, {cliente, el, token, acoes}){
@@ -463,30 +489,23 @@ function relatorio(L, {cliente, el, token, acoes}){
   const ck = store.get("sc_conferido_" + token, {});
   const linhas = (arr, conf) => `<table>${arr.map(i => `<tr>
       ${conf ? `<td class="ck no-print"><input type="checkbox" data-id="${i.id}" ${ck[i.id]?"checked":""} aria-label="Recebido"></td>` : ""}
-      <td>${esc(i.produto)}${i.adicional?`<span class="tag">adicionado</span>`:""}${i.observacao?`<div class="obs">📝 ${esc(i.observacao)}</div>`:""}${i.substituto?`<div class="obs" style="color:var(--pri)">↪ Substituto: ${esc(i.substituto)}</div>`:""}</td>
+      <td>${nomePeca(i)}${i.adicional?`<span class="tag">adicionada</span>`:""}${i.observacao?`<div class="obs">📝 ${esc(i.observacao)}</div>`:""}${i.substituto?`<div class="obs" style="color:var(--pri)">↪ Alternativa: ${esc(i.substituto)}</div>`:""}</td>
       <td class="qt">${i.status==="parcial"?`<span style="color:var(--warn)">${esc(qtdComprTxt(i))}</span>`:esc(qtdTxt(i))}</td></tr>`).join("")}</table>`;
   el.innerHTML = `
     <div class="card report">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
-        <h2 style="margin:0">Relatório de compras</h2><span class="badge b-finalizada">Finalizada</span></div>
-      <div class="kv" style="margin-top:12px">
-        <b>Cliente</b><span>${esc(L.cliente_nome)}</span>
-        <b>Local</b><span>${esc(L.local)}</span>
-        <b>Telefone</b><span>${esc(L.telefone)}</span>
-        <b>Data da lista</b><span>${fmtData(L.data_lista)}</span>
-        <b>Comprador</b><span>${esc(L.comprador_nome)}</span>
-        ${L.finalizada_em ? `<b>Finalizada em</b><span>${fmtHora(L.finalizada_em)}</span>` : ""}
-      </div>
+        <h2 style="margin:0">Orçamento de peças</h2><span class="badge b-finalizada">Finalizado</span></div>
+      <div class="kv" style="margin-top:12px">${kvOrcamento(L, L.finalizada_em ? [["Finalizado em", fmtHora(L.finalizada_em)]] : [])}</div>
       ${L.observacao ? `<p class="small muted">Obs.: ${esc(L.observacao)}</p>` : ""}
       <div class="stats">
-        <div class="stat s-ok"><strong>${c.length}</strong>comprados${pa.length?`<div class="small">${pa.length} parcial${pa.length>1?"is":""}</div>`:""}</div>
-        <div class="stat s-bad"><strong>${x.length}</strong>indisponíveis</div>
+        <div class="stat s-ok"><strong>${c.length}</strong>tem${pa.length?`<div class="small">${pa.length} parcial${pa.length>1?"is":""}</div>`:""}</div>
+        <div class="stat s-bad"><strong>${x.length}</strong>não tem</div>
         ${p.length ? `<div class="stat s-pen"><strong>${p.length}</strong>pendentes</div>` : ""}
       </div>
-      ${cliente && c.length ? `<p class="small muted no-print" style="margin-bottom:0">Marque cada item quando ele chegar para conferir a entrega. <span id="confcnt"></span></p>` : ""}
-      <h4 style="color:var(--ok)">✓ Comprados (${c.length})</h4>${c.length ? linhas(c, cliente) : `<p class="muted small">Nenhum.</p>`}
-      ${x.length ? `<h4 style="color:var(--bad)">✕ Indisponíveis (${x.length})</h4>${linhas(x)}` : ""}
-      ${p.length ? `<h4 style="color:var(--warn)">Não comprados (${p.length})</h4>${linhas(p)}` : ""}
+      ${cliente && c.length ? `<p class="small muted no-print" style="margin-bottom:0">Marque cada peça quando ela chegar para conferir a entrega. <span id="confcnt"></span></p>` : ""}
+      <h4 style="color:var(--ok)">✓ Tem (${c.length})</h4>${c.length ? linhas(c, cliente) : `<p class="muted small">Nenhuma.</p>`}
+      ${x.length ? `<h4 style="color:var(--bad)">✕ Não tem (${x.length})</h4>${linhas(x)}` : ""}
+      ${p.length ? `<h4 style="color:var(--warn)">Não verificadas (${p.length})</h4>${linhas(p)}` : ""}
     </div>
     <div class="card no-print">
       <div class="btns" style="margin-top:0">
@@ -511,8 +530,8 @@ function telaLogin(){
   function render(){
     app.innerHTML = `
       <div class="card" style="max-width:440px;margin:24px auto">
-        <h2>${modo==="entrar" ? "Entrar no painel" : "Criar conta de comprador"}</h2>
-        <p class="muted small">${modo==="entrar" ? "Painel de quem faz as compras." : "Você vai receber um link para enviar aos seus clientes."}</p>
+        <h2>${modo==="entrar" ? "Entrar no painel" : "Criar conta"}</h2>
+        <p class="muted small">${modo==="entrar" ? "Painel de quem recebe os orçamentos de peças Honda TRX." : "Você vai receber um link para enviar aos mecânicos."}</p>
         <form id="f">
           ${modo==="criar" ? `<label for="nm">Seu nome</label><input id="nm" required maxlength="120" autocomplete="name">` : ""}
           <label for="us">Usuário</label><input id="us" required autocapitalize="none" autocomplete="username" placeholder="ex.: jordan" pattern="[a-zA-Z0-9_\\-]{3,30}" title="3 a 30 letras, números, - ou _">
@@ -617,7 +636,7 @@ const norm = t => String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerC
 async function telaPainel(){
   topComprador();
   const P = PAINEL, L = P.listas;
-  const filtros = {abertas:"Abertas", enviada:"Novas", em_compra:"Em compra", finalizada:"Finalizadas", todas:"Todas"};
+  const filtros = {abertas:"Abertos", enviada:"Novos", em_compra:"Em análise", finalizada:"Finalizados", todas:"Todos"};
   const noFiltro = (l, k) => k==="todas" || (k==="abertas" ? l.status!=="finalizada" : l.status===k);
   const cont = k => L.filter(l => noFiltro(l,k)).length;
   const pushOk = pushSuportado() ? (Notification.permission === "granted" && store.get("sc_push_ok") === P.comprador.usuario) || Notification.permission === "denied"
@@ -626,10 +645,10 @@ async function telaPainel(){
   app.innerHTML = `
     <h2 style="margin-top:8px">Olá, ${esc(P.comprador.nome)}</h2>
     <div class="card">
-      <h3>Seu link para clientes</h3>
-      <p class="small muted" style="margin-top:0">Envie este link. Cada cliente preenche os dados e os itens, e a lista chega aqui.</p>
+      <h3>Seu link para mecânicos</h3>
+      <p class="small muted" style="margin-top:0">Envie este link. O mecânico informa o garimpo, o modelo da TRX, a marcha e o cliente, lista as peças com referência, e o orçamento chega aqui.</p>
       <div class="linkbox"><input readonly value="${esc(linkCliente(P.comprador.usuario))}" id="lk"><button class="btn sec" id="cp">Copiar</button></div>
-      <div class="btns"><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent("Faça sua lista de compras por aqui: " + linkCliente(P.comprador.usuario))}">Enviar pelo WhatsApp</a>
+      <div class="btns"><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent("Faça o orçamento das peças da Honda TRX por aqui: " + linkCliente(P.comprador.usuario))}">Enviar pelo WhatsApp</a>
       ${pushOk ? "" : `<button class="btn ghost" id="notif">🔔 Ativar alertas no celular</button>`}
       ${instalarEvt ? `<button class="btn ghost" id="instalar">📲 Instalar app</button>` : ""}</div>
     </div>
@@ -637,24 +656,24 @@ async function telaPainel(){
       <h3 style="margin:0">🔔 ${P.alertas.length} ${P.alertas.length===1?"alerta novo":"alertas novos"}</h3><a href="#alertas">ver</a></div>
       <div class="alertlist">${P.alertas.slice(0,3).map(a=>`<div class="a" data-l="${a.lista_id}">${esc(a.mensagem)} <span class="muted small">· ${fmtHora(a.criado_em)}</span></div>`).join("")}</div></div>` : ""}
     <div style="display:flex;gap:8px;align-items:center" class="search">
-      <input id="busca" type="search" placeholder="🔍 Buscar cliente, local ou telefone" value="${esc(busca)}" style="flex:1">
+      <input id="busca" type="search" placeholder="🔍 Buscar mecânico, cliente, garimpo ou modelo" value="${esc(busca)}" style="flex:1">
       <a class="btn ghost" href="#historico" style="white-space:nowrap">📊 Histórico</a>
     </div>
     <div class="tabs">${Object.entries(filtros).map(([k,v]) => `<button data-f="${k}" class="${filtro===k?"on":""}">${v} (${cont(k)})</button>`).join("")}</div>
     <div id="listas"></div>`;
   function renderListas(){
     const q = norm(busca);
-    const vis = L.filter(l => noFiltro(l, q ? "todas" : filtro) && (!q || norm(l.cliente_nome+" "+l.local+" "+l.telefone).includes(q)));
+    const vis = L.filter(l => noFiltro(l, q ? "todas" : filtro) && (!q || norm([l.cliente_nome,l.cliente_final,l.local,l.modelo,l.telefone].join(" ")).includes(q)));
     $("#listas").innerHTML = vis.length ? vis.map(l => {
       const t = +l.total, c = +l.comprados + (+l.parciais||0), x = +l.indisponiveis;
       return `<div class="card lcard" data-l="${l.id}">
-        <div class="t"><div><div class="nm">${esc(l.cliente_nome)}</div>
-          <div class="muted small">${esc(l.local)} · ${fmtData(l.data_lista)}</div></div>
+        <div class="t"><div><div class="nm">${esc(l.cliente_final || l.cliente_nome)}${l.modelo ? ` <span class="ref-t">· ${esc(l.modelo)}</span>` : ""}</div>
+          <div class="muted small">${l.cliente_final ? `Mecânico ${esc(l.cliente_nome)} · ` : ""}${esc(l.local)} · ${fmtData(l.data_lista)}${l.marcha ? ` · marcha ${esc(l.marcha.toLowerCase())}` : ""}</div></div>
           <div style="text-align:right">${+l.novos ? `<span class="badge b-novo">novidade</span><br>` : ""}<span class="badge b-${l.status}">${STATUS[l.status]}</span></div></div>
         <div class="bar"><i class="g" style="width:${t?c/t*100:0}%"></i><i class="r" style="width:${t?x/t*100:0}%"></i></div>
-        <div class="small muted" style="margin-top:6px">${c+x} de ${t} itens verificados${x?` · ${x} indisponíveis`:""}</div>
+        <div class="small muted" style="margin-top:6px">${c+x} de ${t} peças verificadas${x?` · ${x} não tem`:""}</div>
       </div>`; }).join("")
-    : `<div class="card empty">${q ? "Nenhuma lista encontrada para essa busca." : L.length ? "Nenhuma lista neste filtro." : "Nenhuma lista ainda. Envie seu link para um cliente começar."}</div>`;
+    : `<div class="card empty">${q ? "Nenhum orçamento encontrado para essa busca." : L.length ? "Nenhum orçamento neste filtro." : "Nenhum orçamento ainda. Envie seu link para um mecânico começar."}</div>`;
     $("#listas").querySelectorAll("[data-l]").forEach(c => c.onclick = () => location.hash = "lista/" + c.dataset.l);
   }
   renderListas();
@@ -694,18 +713,18 @@ async function telaHistorico(){
   const topCli = Object.entries(clientes).sort((a,b) => b[1].n - a[1].n).slice(0,10);
   const nomeMes = k => { const [y,m] = k.split("-"); return `${MESES[+m-1]} ${y}`; };
   app.innerHTML = `
-    <p style="margin:4px 0"><a href="#">← Listas</a></p>
+    <p style="margin:4px 0"><a href="#">← Orçamentos</a></p>
     <div class="card">
       <h2 style="margin:0 0 8px">Histórico por mês</h2>
-      ${meses.length ? `<table class="hist"><thead><tr><th>Mês</th><th>Listas</th><th>Itens</th><th>Compr.</th><th>Indisp.</th></tr></thead><tbody>
-        ${meses.map(k => { const m = porMes[k]; return `<tr><td><span style="text-transform:capitalize">${nomeMes(k)}</span><div class="obs">${Object.keys(m.clientes).length} cliente${Object.keys(m.clientes).length>1?"s":""} · ${m.fin} finalizada${m.fin===1?"":"s"}</div></td>
+      ${meses.length ? `<table class="hist"><thead><tr><th>Mês</th><th>Orçam.</th><th>Peças</th><th>Tem</th><th>Não tem</th></tr></thead><tbody>
+        ${meses.map(k => { const m = porMes[k]; return `<tr><td><span style="text-transform:capitalize">${nomeMes(k)}</span><div class="obs">${Object.keys(m.clientes).length} mecânico${Object.keys(m.clientes).length>1?"s":""} · ${m.fin} finalizado${m.fin===1?"":"s"}</div></td>
           <td>${m.listas}</td><td>${m.itens}</td><td style="color:var(--ok)">${m.comprados}</td><td style="color:var(--bad)">${m.indisp}</td></tr>`; }).join("")}
-      </tbody></table>` : `<div class="empty">Ainda não há listas.</div>`}
+      </tbody></table>` : `<div class="empty">Ainda não há orçamentos.</div>`}
     </div>
-    ${topCli.length ? `<div class="card"><h3>Clientes que mais pedem</h3>
+    ${topCli.length ? `<div class="card"><h3>Mecânicos que mais pedem</h3>
       ${topCli.map(([nome, c]) => `<div class="item"><div class="info"><div class="p">${esc(nome)}</div>
         <div class="q">${esc([...c.locais].join(", "))} · última em ${fmtData(c.ult)}</div></div>
-        <a href="#" class="btn sec" data-b="${esc(nome)}">${c.n} lista${c.n>1?"s":""}</a></div>`).join("")}
+        <a href="#" class="btn sec" data-b="${esc(nome)}">${c.n} orçam.</a></div>`).join("")}
     </div>` : ""}`;
   app.querySelectorAll("[data-b]").forEach(a => a.onclick = e => { e.preventDefault(); busca = a.dataset.b; location.hash = ""; });
 }
@@ -733,25 +752,22 @@ async function telaListaComprador(id, modoRel){
   if(L.status === "finalizada" || modoRel){
     const wa = foneWa(L.telefone);
     relatorio(L, {cliente:false, el:app, token:L.token, acoes:`
-      <a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent(textoRelatorio(L, L.token))}">Enviar relatório no WhatsApp</a>
-      <button class="btn sec" id="cpr">Copiar link do relatório</button>
-      <button class="btn ghost" id="reab">Reabrir lista</button>
+      <a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent(textoRelatorio(L, L.token))}">Enviar orçamento no WhatsApp</a>
+      <button class="btn sec" id="cpr">Copiar link do orçamento</button>
+      <button class="btn ghost" id="reab">Reabrir orçamento</button>
       <button class="btn ghost" id="voltar">← Voltar</button>`});
     $("#cpr").onclick = () => copiar(linkLista(L.token));
     $("#voltar").onclick = () => location.hash = "";
-    $("#reab").onclick = async () => { if(!confirm("Reabrir esta lista para continuar marcando itens?")) return;
+    $("#reab").onclick = async () => { if(!confirm("Reabrir este orçamento para continuar marcando peças?")) return;
       await rpc("sc_definir_status", {p_chave: SESS.chave, p_lista: id, p_status: "em_compra"}); rotear(true); };
     return;
   }
 
   let aberto = null;
   function formItem(i){
-    const parcial = aberto.modo === "parcial";
     return `<form class="sub" id="fi-form">
-      ${parcial ? `<label for="fi-q">Quanto você comprou? <span class="muted" style="font-weight:400">(pedido: ${esc(qtdTxt(i))})</span></label>
-        <input id="fi-q" type="number" inputmode="decimal" min="0" step="any" value="${i.status==="parcial"?esc(i.qtd_comprada):""}">` : ""}
-      <label for="fi-s">${parcial ? "Substituto para o restante" : "Comprou algo no lugar?"} <span class="muted" style="font-weight:400">(opcional)</span></label>
-      <input id="fi-s" maxlength="200" placeholder="Ex.: Arroz Tio João no lugar do Camil" value="${esc(i.substituto||"")}">
+      <label for="fi-s">Tem outra peça no lugar? <span class="muted" style="font-weight:400">(opcional)</span></label>
+      <input id="fi-s" maxlength="200" placeholder="Ex.: Ref. 06455-HP5-601 paralela" value="${esc(i.substituto||"")}">
       <div class="btns"><button type="button" class="btn ghost" id="fi-x">Cancelar</button><button class="btn" type="submit">Salvar</button></div>
     </form>`;
   }
@@ -760,36 +776,36 @@ async function telaListaComprador(id, modoRel){
     const itens = ocultarFeitos ? L.itens.filter(i => i.status==="pendente") : L.itens;
     const wa = foneWa(L.telefone);
     app.innerHTML = `
-      <p style="margin:4px 0"><a href="#">← Listas</a></p>
+      <p style="margin:4px 0"><a href="#">← Orçamentos</a></p>
       <div class="card">
         <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
-          <div><h2 style="margin:0">${esc(L.cliente_nome)}</h2><div class="muted small">${esc(L.local)} · ${fmtData(L.data_lista)}</div></div>
+          <div><h2 style="margin:0">${esc(L.cliente_final || L.cliente_nome)}</h2><div class="muted small">${L.cliente_final ? `Mecânico ${esc(L.cliente_nome)} · ` : ""}${esc(L.local)} · ${fmtData(L.data_lista)}</div></div>
           <span class="badge b-${L.status}">${STATUS[L.status]}</span></div>
-        <p class="small" style="margin:8px 0 0">📞 ${esc(L.telefone)} · <a target="_blank" rel="noopener" href="https://wa.me/${wa}">WhatsApp</a></p>
+        ${L.modelo ? `<p style="margin:8px 0 0;font-weight:600">🏍 Honda ${esc(motoTxt(L))}</p>` : ""}
+        ${L.telefone ? `<p class="small" style="margin:8px 0 0">📞 ${esc(L.telefone)} · <a target="_blank" rel="noopener" href="https://wa.me/${wa}">WhatsApp</a></p>` : ""}
         ${L.observacao ? `<p class="small muted" style="margin:6px 0 0">Obs.: ${esc(L.observacao)}</p>` : ""}
         <div class="bar"><i class="g" style="width:${t?c/t*100:0}%"></i><i class="r" style="width:${t?x/t*100:0}%"></i></div>
-        <p class="small muted" style="margin:6px 0 0">${c} comprados · ${x} indisponíveis · ${t-c-x} pendentes</p>
+        <p class="small muted" style="margin:6px 0 0">${c} tem · ${x} não tem · ${t-c-x} pendentes</p>
       </div>
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-          <h3 style="margin:0">Itens</h3>
+          <h3 style="margin:0">Peças</h3>
           <label class="chk" style="margin:0;font-weight:500"><input type="checkbox" id="oc" ${ocultarFeitos?"checked":""}> Só pendentes</label></div>
-        <p class="small muted" style="margin:4px 0 0">✓ comprado · ½ comprado em parte · ✕ indisponível. Toque de novo para desfazer.</p>
+        <p class="small muted" style="margin:4px 0 0">✓ tem · ✕ não tem. Toque de novo para desfazer.</p>
         <div style="margin-top:4px">${itens.length ? itens.map(i => `<div class="item ${i.status}" data-i="${i.id}"><div class="info">
-            <div class="p">${esc(i.produto)}${i.adicional?`<span class="tag">adicionado depois</span>`:""}</div>
-            <div class="q">${esc(qtdTxt(i))}${i.status==="indisponivel"?` · <span style="color:var(--bad)">indisponível</span>`:""}</div>${detalheItem(i)}
-            ${i.status==="indisponivel" && !i.substituto ? `<a href="#" class="small" data-subst="${i.id}">+ informar substituto</a>` : ""}</div>
-            <button class="ib ${i.status==="indisponivel"?"on-bad":""}" data-s="indisponivel" title="Indisponível" aria-label="Indisponível">✕</button>
-            <button class="ib ${i.status==="parcial"?"on-warn":""}" data-s="parcial" title="Comprado em parte" aria-label="Comprado em parte">½</button>
-            <button class="ib ${i.status==="comprado"?"on-ok":""}" data-s="comprado" title="Comprado" aria-label="Comprado">✓</button>
+            <div class="p">${nomePeca(i)}${i.adicional?`<span class="tag">adicionada depois</span>`:""}</div>
+            <div class="q">${esc(qtdTxt(i))}${i.status==="indisponivel"?` · <span style="color:var(--bad)">não tem</span>`:""}</div>${detalheItem(i)}
+            ${i.status==="indisponivel" && !i.substituto ? `<a href="#" class="small" data-subst="${i.id}">+ informar alternativa</a>` : ""}</div>
+            <button class="ib ${i.status==="indisponivel"?"on-bad":""}" data-s="indisponivel" title="Não tem" aria-label="Não tem">✕</button>
+            <button class="ib ${i.status==="comprado"||i.status==="parcial"?"on-ok":""}" data-s="comprado" title="Tem" aria-label="Tem">✓</button>
           </div>
           ${aberto && aberto.id===i.id ? formItem(i) : ""}`).join("") : `<div class="empty">Tudo verificado! 🎉</div>`}</div>
       </div>
       <div class="card no-print"><div class="btns" style="margin-top:0">
-        <button class="btn danger" id="del">Excluir lista</button>
+        <button class="btn danger" id="del">Excluir orçamento</button>
       </div></div>
       <div class="sticky-bottom no-print"><div class="in">
-        <button class="btn" id="fin">Finalizar compra e gerar relatório</button>
+        <button class="btn" id="fin">Finalizar e gerar orçamento</button>
       </div></div>`;
     $("#oc").onchange = e => { ocultarFeitos = e.target.checked; store.set("sc_ocultar", ocultarFeitos); render(); };
     async function salvarItem(it, status, qtd, subst){
@@ -803,40 +819,34 @@ async function telaListaComprador(id, modoRel){
     app.querySelectorAll(".item[data-i] .ib").forEach(b => b.onclick = () => {
       const it = L.itens.find(i => i.id === b.closest(".item").dataset.i);
       const s = b.dataset.s;
-      if(it.status === s){ return salvarItem(it, "pendente"); }
-      if(s === "parcial"){ aberto = {id: it.id, modo: "parcial"}; return render(); }
+      if(it.status === s || (s === "comprado" && it.status === "parcial")){ return salvarItem(it, "pendente"); }
       salvarItem(it, s, null, s === "indisponivel" ? null : it.substituto);
     });
     app.querySelectorAll("[data-subst]").forEach(a => a.onclick = e => { e.preventDefault(); aberto = {id: a.dataset.subst, modo: "indisponivel"}; render(); });
     const fi = app.querySelector("#fi-form");
     if(fi){
       const it = L.itens.find(i => i.id === aberto.id);
-      const q = app.querySelector("#fi-q"); (q || app.querySelector("#fi-s")).focus();
+      app.querySelector("#fi-s").focus();
       app.querySelector("#fi-x").onclick = () => { aberto = null; render(); };
       fi.onsubmit = e => {
         e.preventDefault();
-        const subst = app.querySelector("#fi-s").value.trim();
-        if(aberto.modo === "parcial"){
-          const v = parseFloat(String(q.value).replace(",", "."));
-          if(!(v > 0) || v >= Number(it.quantidade)){ toast(`Informe uma quantidade entre 0 e ${fmtQ(it.quantidade)}`, {err:1}); q.focus(); return; }
-          salvarItem(it, "parcial", v, subst);
-        } else salvarItem(it, "indisponivel", null, subst);
+        salvarItem(it, "indisponivel", null, app.querySelector("#fi-s").value.trim());
       };
     }
     $("#del").onclick = async () => {
-      if(!confirm(`Excluir a lista de ${L.cliente_nome}? Isso não pode ser desfeito.`)) return;
-      await rpc("sc_excluir_lista", {p_chave: SESS.chave, p_lista: id}); toast("Lista excluída"); location.hash = "";
+      if(!confirm(`Excluir o orçamento de ${L.cliente_final || L.cliente_nome}? Isso não pode ser desfeito.`)) return;
+      await rpc("sc_excluir_lista", {p_chave: SESS.chave, p_lista: id}); toast("Orçamento excluído"); location.hash = "";
     };
     $("#fin").onclick = async () => {
       const pend = L.itens.filter(i => i.status === "pendente");
-      let msg = "Finalizar a compra e gerar o relatório?";
-      if(pend.length) msg = `${pend.length} ${pend.length===1?"item ainda está pendente e será marcado":"itens ainda estão pendentes e serão marcados"} como indisponível. Finalizar mesmo assim?`;
+      let msg = "Finalizar e gerar o orçamento?";
+      if(pend.length) msg = `${pend.length} ${pend.length===1?"peça ainda está pendente e será marcada":"peças ainda estão pendentes e serão marcadas"} como "não tem". Finalizar mesmo assim?`;
       if(!confirm(msg)) return;
       const b = $("#fin"); busy(b, true, "Finalizando...");
       try{
         await Promise.all(pend.map(i => rpc("sc_marcar_item", {p_chave: SESS.chave, p_item: i.id, p_status: "indisponivel"})));
         await rpc("sc_definir_status", {p_chave: SESS.chave, p_lista: id, p_status: "finalizada"});
-        toast("Compra finalizada! Envie o relatório ao cliente.");
+        toast("Orçamento finalizado! Envie ao mecânico.");
         rotear(true); scrollTo(0,0);
       }catch(e){ busy(b,false); toast(e.message, {err:1}); }
     };
