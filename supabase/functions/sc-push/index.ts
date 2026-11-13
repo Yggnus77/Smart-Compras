@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
 
     webpush.setVapidDetails("mailto:avisos@smart-compras.app", pub, priv);
     const payload = JSON.stringify({
-      title: a.tipo === "itens_adicionados" ? "Peças adicionadas" : "Novo orçamento de peças",
+      title: a.tipo === "itens_adicionados" ? "Peças adicionadas" : a.tipo === "imagem" ? "Foto de peça recebida" : "Novo orçamento de peças",
       body: a.mensagem,
       lista_id: a.lista_id,
     });

@@ -143,6 +143,39 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--pri);outline-off
 .chk input{width:auto}
 .spin{display:inline-block;width:18px;height:18px;border:3px solid var(--line);border-top-color:var(--pri);border-radius:50%;animation:sp 1s linear infinite;vertical-align:middle}
 @keyframes sp{to{transform:rotate(360deg)}}
+/* imagens das peças */
+.th{position:relative;flex:none;width:60px;height:60px;border-radius:10px;border:1px solid var(--line);background:#fff;padding:0;cursor:zoom-in;overflow:visible;display:flex;align-items:center;justify-content:center}
+.th img{width:100%;height:100%;object-fit:cover;border-radius:9px;display:block;image-rendering:auto}
+.th.vazio{background:var(--bg);border-style:dashed;color:var(--muted);font-size:22px;cursor:default}
+.th.vazio.add{cursor:pointer;color:var(--pri);border-color:var(--pri)}
+.th.vazio.add small{position:absolute;bottom:2px;left:0;right:0;font-size:9px;font-weight:700;line-height:1}
+.th .ck{position:absolute;right:-6px;top:-6px;width:20px;height:20px;border-radius:50%;font-size:12px;font-weight:800;line-height:20px;text-align:center;color:#fff;box-shadow:0 0 0 2px var(--card)}
+.th .ck.ok{background:var(--ok)}.th .ck.no{background:var(--bad)}.th .ck.q{background:var(--warn)}
+.report td.im{width:68px;padding-right:8px}
+.report .th{width:56px;height:56px}
+.imgaviso{font-size:13px;margin-top:2px}
+.newitem .imgrow{display:flex;gap:10px;align-items:center}
+.ov{position:fixed;inset:0;z-index:60;background:rgba(3,8,22,.94);display:flex;flex-direction:column;color:#fff;animation:fd .15s ease}
+@keyframes fd{from{opacity:0}}
+.ov .hd{display:flex;align-items:center;gap:10px;padding:12px 16px calc(12px);max-width:900px;width:100%;margin:0 auto}
+.ov .hd .tt{flex:1;min-width:0;font-weight:700;line-height:1.3}
+.ov .hd .tt small{display:block;font-weight:500;color:#c3cbe0}
+.ov .fx{border:0;background:rgba(255,255,255,.15);color:#fff;border-radius:10px;width:44px;height:44px;font-size:20px;cursor:pointer;flex:none}
+.ov .pic{flex:1;min-height:0;overflow:auto;display:flex;align-items:center;justify-content:center;padding:0 8px;-webkit-overflow-scrolling:touch}
+.ov .pic img{max-width:100%;max-height:100%;object-fit:contain;background:#fff;border-radius:8px;cursor:zoom-in}
+.ov .pic.zoom{display:block}
+.ov .pic.zoom img{max-width:none;max-height:none;cursor:zoom-out}
+.ov .ft{padding:12px 16px calc(14px + env(safe-area-inset-bottom));max-width:900px;width:100%;margin:0 auto}
+.ov .ft p{margin:0 0 10px;font-size:15px;text-align:center}
+.ov .ft .btns{margin-top:0}
+.ov .btn.ghost{color:#fff;border-color:rgba(255,255,255,.35)}
+.sheet{position:fixed;inset:0;z-index:60;background:rgba(3,8,22,.6);display:flex;align-items:flex-end;justify-content:center;animation:fd .15s ease}
+.sheet .bx{background:var(--card);color:var(--ink);width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
+@media (min-width:600px){.sheet{align-items:center}.sheet .bx{border-radius:18px}}
+.sheet .prev{display:flex;gap:12px;align-items:center;margin:8px 0 4px}
+.sheet .prev img{width:96px;height:96px;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:#fff}
+.sheet .op{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.sheet .op .btn{justify-content:flex-start}
 .only-print{display:none}
 @media print{
   header.top,.no-print,.toastbox,.sticky-bottom{display:none!important}
@@ -151,6 +184,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--pri);outline-off
   .card{border:0;box-shadow:none;padding:0}
   .wrap{padding:0}
   .report td{border-color:#bbb}
+  .th .ck{display:none}
+  .th.vazio{visibility:hidden}
 }
 </style>
 </head>
@@ -253,8 +288,155 @@ function busy(btn, on, txt){
 }
 function setTop(html){ $("#topbar").innerHTML = html; }
 
+/* ====== imagens das peças ====== */
+const BUCKET = "sc-pecas";
+const FOTO_MAX = 1600;   // lado maior da foto enviada (px): nítida no zoom e leve para o celular
+const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)));
+async function reduzirFoto(file){
+  const url = URL.createObjectURL(file);
+  try{
+    const img = new Image(); img.src = url;
+    try{ await img.decode(); }catch(e){ throw new Error("Não consegui abrir esta foto. Use uma foto JPG ou PNG."); }
+    const w = img.naturalWidth, h = img.naturalHeight, s = Math.min(1, FOTO_MAX / Math.max(w, h));
+    const c = document.createElement("canvas"); c.width = Math.round(w*s); c.height = Math.round(h*s);
+    const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0,0,c.width,c.height);
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high"; g.drawImage(img, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.88));
+    if(!blob) throw new Error("Não consegui preparar a foto.");
+    return blob;
+  } finally { URL.revokeObjectURL(url); }
+}
+async function enviarFoto(file){
+  const blob = await reduzirFoto(file);
+  const nome = uuid() + ".jpg";
+  const ir = auth => fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${nome}`, {method:"POST",
+    headers: Object.assign({apikey: SUPABASE_KEY, "Content-Type":"image/jpeg", "cache-control":"31536000", "x-upsert":"false"}, auth ? {Authorization: "Bearer " + SUPABASE_KEY} : {}), body: blob});
+  let r = await ir(false);
+  if(!r.ok && (r.status === 400 || r.status === 401 || r.status === 403)) r = await ir(true);
+  if(!r.ok){
+    const t = await r.text().catch(()=> "");
+    if(/bucket not found/i.test(t)) throw new Error("Falta rodar o SQL das imagens (005_imagens.sql) no Supabase.");
+    throw new Error("Não foi possível enviar a foto. Verifique a internet e tente de novo.");
+  }
+  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${nome}`;
+}
+// aceita link direto de imagem; se colarem um link do Google Imagens, extrai o endereço da imagem
+function limparLinkImagem(u){
+  u = String(u||"").trim();
+  try{ const x = new URL(u); const iu = x.searchParams.get("imgurl") || x.searchParams.get("mediaurl"); if(iu) u = iu; }catch(e){}
+  return /^https?:\/\/[^\s"'<>]+$/i.test(u) && u.length <= 1000 ? u : "";
+}
+function testarImagem(u){
+  return new Promise((ok, no) => { const i = new Image(); const t = setTimeout(() => no(), 12000);
+    i.onload = () => { clearTimeout(t); i.naturalWidth >= 40 ? ok(i) : no(); }; i.onerror = () => { clearTimeout(t); no(); }; i.src = u; });
+}
+const buscaImagemUrl = (it, modelo) => "https://www.google.com/search?tbm=isch&q=" +
+  encodeURIComponent(["Honda", modelo || "TRX", it.referencia || "", it.produto].filter(Boolean).join(" "));
+function legendaPeca(it){ return `${esc(it.produto)}${it.referencia ? `<small>Ref. ${esc(it.referencia)}</small>` : ""}`; }
+
+// miniatura ao lado da peça. selo: dono vê se a imagem foi conferida
+function thumbHtml(i, {add, selo} = {}){
+  if(i.imagem){
+    const ck = !selo ? "" : i.imagem_ok === true ? `<span class="ck ok" title="Imagem conferida">✓</span>`
+      : i.imagem_ok === false ? `<span class="ck no" title="Imagem não confere">!</span>` : `<span class="ck q" title="Conferir imagem">?</span>`;
+    return `<button type="button" class="th" data-img="${esc(i.id)}" title="Ver imagem" aria-label="Ver imagem de ${esc(i.produto)}"><img src="${esc(i.imagem)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('vazio');this.remove()">${ck}</button>`;
+  }
+  return add ? `<button type="button" class="th vazio add" data-addimg="${esc(i.id)}" title="Adicionar imagem" aria-label="Adicionar imagem de ${esc(i.produto)}">📷<small>foto</small></button>`
+             : `<span class="th vazio" title="Sem imagem">🔩</span>`;
+}
+function avisoImagem(i, dono){
+  if(!i.imagem) return "";
+  if(i.imagem_ok === false) return `<div class="imgaviso" style="color:var(--bad)">⚠ Imagem não confere com a peça${dono ? "" : ". Envie outra foto"}</div>`;
+  if(i.imagem_ok === true) return dono ? "" : `<div class="imgaviso" style="color:var(--ok)">✓ Imagem conferida</div>`;
+  return dono ? `<div class="imgaviso" style="color:var(--warn)">? Imagem a conferir · <a href="#" data-img="${esc(i.id)}">conferir</a></div>` : "";
+}
+
+function fecharOv(){ document.querySelectorAll(".ov,.sheet").forEach(e => e.remove()); document.body.style.overflow = ""; }
+addEventListener("keydown", e => { if(e.key === "Escape") fecharOv(); });
+
+// visualizador grande. acoes: {conferir(ok), trocar()}
+function verImagem(it, acoes = {}){
+  fecharOv();
+  const ov = document.createElement("div"); ov.className = "ov"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-modal","true");
+  const st = it.imagem_ok === true ? `<span style="color:#4ade80">✓ Conferida: é a peça descrita</span>` : it.imagem_ok === false ? `<span style="color:#f87171">⚠ Marcada como "não confere"</span>` : "";
+  ov.innerHTML = `
+    <div class="hd"><div class="tt">${legendaPeca(it)}</div><button class="fx" id="ov-x" aria-label="Fechar">✕</button></div>
+    <div class="pic" id="ov-pic"><img src="${esc(it.imagem)}" alt="${esc(it.produto)}" referrerpolicy="no-referrer"></div>
+    <div class="ft">
+      ${acoes.conferir ? `<p>Esta imagem é a peça descrita acima? ${st ? `<br><small>${st}</small>` : ""}</p>
+        <div class="btns"><button class="btn danger" id="ov-no">✕ Não confere</button><button class="btn" id="ov-ok" style="background:var(--ok);color:#fff">✓ Sim, confere</button></div>`
+        : st ? `<p>${st}</p>` : `<p class="small" style="color:#c3cbe0">Toque na imagem para ampliar.</p>`}
+      ${acoes.trocar ? `<div class="btns"><button class="btn ghost" id="ov-tr">🔄 Trocar imagem</button>
+        <a class="btn ghost" target="_blank" rel="noopener" href="${esc(it.imagem)}">↗ Abrir original</a></div>` : ""}
+    </div>`;
+  document.body.appendChild(ov); document.body.style.overflow = "hidden";
+  const pic = ov.querySelector("#ov-pic");
+  pic.querySelector("img").onclick = () => pic.classList.toggle("zoom");
+  ov.querySelector("#ov-x").onclick = fecharOv;
+  pic.onclick = e => { if(e.target === pic) fecharOv(); };
+  if(acoes.conferir){
+    ov.querySelector("#ov-ok").onclick = () => { fecharOv(); acoes.conferir(true); };
+    ov.querySelector("#ov-no").onclick = () => { fecharOv(); acoes.conferir(false); };
+  }
+  if(acoes.trocar) ov.querySelector("#ov-tr").onclick = () => { fecharOv(); acoes.trocar(); };
+}
+
+// escolher imagem: foto (câmera/galeria), procurar na internet, ou colar link.
+// resolve com a URL, com null (remover) ou undefined (cancelado)
+function escolherImagem(it, {modelo, titulo} = {}){
+  return new Promise(resolve => {
+    fecharOv();
+    const sh = document.createElement("div"); sh.className = "sheet"; sh.setAttribute("role","dialog"); sh.setAttribute("aria-modal","true");
+    sh.innerHTML = `<div class="bx">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div><h3 style="margin:0">${esc(titulo || "Imagem da peça")}</h3><div class="small muted">${esc(it.produto || "Peça")}${it.referencia ? ` · Ref. ${esc(it.referencia)}` : ""}</div></div>
+        <button class="x" id="sh-x" style="color:var(--muted)" aria-label="Fechar">✕</button></div>
+      ${it.imagem ? `<div class="prev"><img src="${esc(it.imagem)}" alt="" referrerpolicy="no-referrer"><span class="small muted">Imagem atual</span></div>` : ""}
+      <p class="small muted" style="margin:8px 0 0">A melhor imagem é a <b>foto da própria peça</b> (ou da peça velha), bem iluminada e de perto, de preferência mostrando o código.</p>
+      <div class="op">
+        <button class="btn" type="button" id="sh-fb">📷 Tirar foto ou escolher da galeria</button><input type="file" id="sh-f" accept="image/*" hidden>
+        <a class="btn sec" id="sh-b" target="_blank" rel="noopener" href="${esc(buscaImagemUrl(it, modelo))}">🔎 Procurar imagem pela referência</a>
+      </div>
+      <label for="sh-u" style="margin-top:14px">Ou cole o link da imagem</label>
+      <div class="linkbox"><input id="sh-u" type="url" inputmode="url" placeholder="https://..." autocomplete="off"><button class="btn sec" id="sh-ok" type="button">Usar</button></div>
+      <p class="small muted" style="margin:6px 0 0">Na busca, abra a imagem, toque e segure nela e escolha <b>Copiar endereço da imagem</b>. Depois cole aqui.</p>
+      ${it.imagem ? `<div class="btns"><button class="btn danger" id="sh-rm" type="button">Remover imagem</button></div>` : ""}
+    </div>`;
+    document.body.appendChild(sh); document.body.style.overflow = "hidden";
+    let feito = false;
+    const fim = v => { if(feito) return; feito = true; fecharOv(); resolve(v); };
+    sh.querySelector("#sh-x").onclick = () => fim(undefined);
+    sh.onclick = e => { if(e.target === sh) fim(undefined); };
+    const rm = sh.querySelector("#sh-rm"); if(rm) rm.onclick = () => { if(confirm("Remover a imagem desta peça?")) fim(null); };
+    sh.querySelector("#sh-fb").onclick = () => sh.querySelector("#sh-f").click();
+    sh.querySelector("#sh-f").onchange = async e => {
+      const f = e.target.files && e.target.files[0]; if(!f) return;
+      const lb = sh.querySelector("#sh-fb"); busy(lb, true, "Enviando foto...");
+      try{ fim(await enviarFoto(f)); }catch(err){ busy(lb, false); e.target.value = ""; toast(err.message, {err:1, ms:7000}); }
+    };
+    const usar = async () => {
+      const b = sh.querySelector("#sh-ok"), u = limparLinkImagem(sh.querySelector("#sh-u").value);
+      if(!u){ toast("Cole um link que comece com https://", {err:1}); return; }
+      busy(b, true);
+      try{ await testarImagem(u); fim(u); }
+      catch(e){ busy(b, false); toast("Esse link não abriu como imagem. Copie o endereço da IMAGEM (não da página) ou envie uma foto.", {err:1, ms:8000}); }
+    };
+    sh.querySelector("#sh-ok").onclick = usar;
+    sh.querySelector("#sh-u").onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); usar(); } };
+  });
+}
+// liga as miniaturas de uma tela. op: {selo, conferir(it,ok), trocar(it,url)|null}
+function ligarImagens(root, itens, op = {}){
+  const acha = id => itens.find(i => String(i.id) === String(id));
+  const trocar = op.trocar && (async it => { const u = await escolherImagem(it, {modelo: op.modelo}); if(u !== undefined) op.trocar(it, u); });
+  root.querySelectorAll("[data-img]").forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); const it = acha(b.dataset.img); if(it) verImagem(it, {
+    conferir: op.conferir && (ok => op.conferir(it, ok)), trocar: trocar && (() => trocar(it)) }); });
+  root.querySelectorAll("[data-addimg]").forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); const it = acha(b.dataset.addimg); if(it && trocar) trocar(it); });
+}
+
 /* ====== editor de itens (usado pelo cliente) ====== */
-function itemEditor(container, itens, onChange){
+function itemEditor(container, itens, onChange, ctx = {}){
+  let novaImg = "";   // imagem da peça que está sendo digitada
   function render(){
     container.innerHTML = `
       <div class="newitem">
@@ -263,11 +445,14 @@ function itemEditor(container, itens, onChange){
         <div><label for="nq">Qtd.</label><input id="nq" type="number" inputmode="decimal" min="0" step="any" value="1"></div>
         <div><label for="nu">Tipo</label><select id="nu">${UNIDADES.map(u=>`<option>${u}</option>`).join("")}</select></div>
         <div class="full"><label for="no">Observação <span class="muted" style="font-weight:400">(opcional: original/paralela, lado, medida...)</span></label><input id="no" maxlength="300" autocomplete="off"></div>
+        <div class="full"><label>Imagem da peça <span class="muted" style="font-weight:400">(recomendado: foto nítida da peça)</span></label>
+          <div class="imgrow">${novaImg ? `<button type="button" class="th" id="nimg-v" title="Ver imagem"><img src="${esc(novaImg)}" alt="" referrerpolicy="no-referrer"></button>` : `<span class="th vazio">🔩</span>`}
+          <button class="btn sec" id="nimg" type="button" style="flex:1">${novaImg ? "🔄 Trocar imagem" : "📷 Adicionar foto / imagem"}</button></div></div>
         <div class="full"><button class="btn block" id="nadd" type="button">+ Adicionar</button></div>
       </div>
       <div class="draft" style="margin-top:12px">
         ${itens.length ? itens.map((it,i)=>`
-          <div class="item"><div class="info"><div class="p">${nomePeca(it)}</div>
+          <div class="item">${thumbHtml({...it, id:"d"+i}, {add:true})}<div class="info"><div class="p">${nomePeca(it)}</div>
           <div class="q">${fmtQ(it.quantidade)} ${esc(fmtUn(it.quantidade,it.unidade))}</div>${it.observacao?`<div class="obs">📝 ${esc(it.observacao)}</div>`:""}</div>
           <button class="x" data-i="${i}" title="Remover" aria-label="Remover">✕</button></div>`).join("")
         : `<div class="empty small">Nenhuma peça ainda. Adicione a primeira acima.</div>`}
@@ -279,7 +464,8 @@ function itemEditor(container, itens, onChange){
       const produto = np.value.trim(); const quantidade = parseFloat(String(nq.value).replace(",", "."));
       if(!produto){ np.focus(); return; }
       if(!(quantidade > 0)){ toast("Informe uma quantidade válida", {err:1}); nq.focus(); return; }
-      itens.push({produto, referencia: nr.value.trim(), quantidade, unidade: nu.value, observacao: no.value.trim()});
+      itens.push({produto, referencia: nr.value.trim(), quantidade, unidade: nu.value, observacao: no.value.trim(), imagem: novaImg || ""});
+      novaImg = "";
       store.set("sc_ultima_unidade", nu.value);
       onChange && onChange(); render();
       container.querySelector("#np").focus();
@@ -287,6 +473,20 @@ function itemEditor(container, itens, onChange){
     container.querySelector("#nadd").onclick = add;
     np.onkeydown = nr.onkeydown = nq.onkeydown = no.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); add(); } };
     container.querySelectorAll(".x").forEach(b => b.onclick = () => { itens.splice(+b.dataset.i,1); onChange && onChange(); render(); });
+    // imagem da peça nova: guarda o que já foi digitado antes de redesenhar
+    const manter = () => { const v = {p:np.value, r:nr.value, q:nq.value, u:nu.value, o:no.value}; return () => {
+      const g = id => container.querySelector(id); g("#np").value = v.p; g("#nr").value = v.r; g("#nq").value = v.q; g("#nu").value = v.u; g("#no").value = v.o; }; };
+    container.querySelector("#nimg").onclick = async () => {
+      const volta = manter();
+      const u = await escolherImagem({produto: np.value.trim() || "Peça nova", referencia: nr.value.trim(), imagem: novaImg}, {modelo: ctx.modelo});
+      if(u === undefined) return;
+      novaImg = u || ""; render(); volta();
+    };
+    const nv = container.querySelector("#nimg-v"); if(nv) nv.onclick = () => verImagem({produto: np.value.trim() || "Peça nova", referencia: nr.value.trim(), imagem: novaImg});
+    // imagens das peças já na lista (rascunho)
+    const rasc = itens.map((it, i) => ({...it, id: "d"+i}));
+    ligarImagens(container.querySelector(".draft"), rasc, {modelo: ctx.modelo, trocar: (it, u) => {
+      const volta = manter(); itens[+it.id.slice(1)].imagem = u || ""; onChange && onChange(); render(); volta(); }});
   }
   render();
 }
@@ -309,7 +509,7 @@ async function telaNovaLista(usuario){
     history.replaceState(null, "", linkCliente(usuario));
     try{
       const ant = await rpc("sc_ver_lista", {p_token: rep});
-      rasc.itens = ant.itens.map(i => ({produto:i.produto, referencia:i.referencia||"", quantidade:Number(i.quantidade), unidade:i.unidade, observacao:i.observacao||""}));
+      rasc.itens = ant.itens.map(i => ({produto:i.produto, referencia:i.referencia||"", quantidade:Number(i.quantidade), unidade:i.unidade, observacao:i.observacao||"", imagem:i.imagem||""}));
       rasc.dados.data = hoje(); rasc.passo = 1; salvar();
       setTimeout(() => toast(`${rasc.itens.length} peças copiadas do orçamento de ${fmtData(ant.data_lista)}. Confira os dados e as peças antes de enviar.`, {ms:7000}), 50);
     }catch(e){ toast("Não foi possível copiar o orçamento anterior.", {err:1}); }
@@ -366,7 +566,7 @@ async function telaNovaLista(usuario){
         <button class="btn" id="enviar">Enviar orçamento (<span id="cnt">${rasc.itens.length}</span>)</button>
       </div></div>`;
     $("#ed").onclick = e => { e.preventDefault(); passo1(); };
-    itemEditor($("#ed-itens"), rasc.itens, () => { salvar(); $("#cnt").textContent = rasc.itens.length; });
+    itemEditor($("#ed-itens"), rasc.itens, () => { salvar(); $("#cnt").textContent = rasc.itens.length; }, {modelo: d.modelo});
     $("#enviar").onclick = async () => {
       if(!rasc.itens.length){ toast("Adicione pelo menos uma peça", {err:1}); return; }
       if(!confirm(`Enviar o orçamento com ${rasc.itens.length} ${rasc.itens.length===1?"peça":"peças"} para ${comp.nome}?`)) return;
@@ -411,10 +611,11 @@ async function telaListaCliente(token){
       </div>
       <div class="card">
         <h3>${t} ${t===1?"peça":"peças"}</h3>
-        ${L.itens.map(i=>`<div class="item ${i.status}"><div class="info">
+        ${L.itens.some(i => !i.imagem) ? `<p class="small muted" style="margin:0 0 4px">Toque em 📷 para enviar a foto de uma peça. Ajuda a confirmar que é a peça certa.</p>` : ""}
+        <div id="pecas">${L.itens.map(i=>`<div class="item ${i.status}">${thumbHtml(i, {add:true})}<div class="info">
           <div class="p">${nomePeca(i)}${i.adicional?`<span class="tag">adicionado</span>`:""}</div>
-          <div class="q">${esc(qtdTxt(i))}</div>${detalheItem(i)}</div>
-          ${statusSpan(i)}</div>`).join("")}
+          <div class="q">${esc(qtdTxt(i))}</div>${detalheItem(i)}${avisoImagem(i, false)}</div>
+          ${statusSpan(i)}</div>`).join("")}</div>
       </div>
       <div class="card no-print">
         <p class="small muted" style="margin-top:0">Guarde este link para acompanhar o orçamento e ver o resultado final.</p>
@@ -425,6 +626,12 @@ async function telaListaCliente(token){
       </div></div>`;
     $("#cp").onclick = () => copiar(linkLista(token));
     $("#add").onclick = adicionar;
+    ligarImagens($("#pecas"), L.itens, {modelo: L.modelo, trocar: async (it, u) => {
+      try{ await rpc("sc_item_imagem_cliente", {p_token: token, p_item: it.id, p_url: u});
+        toast(u ? `Foto enviada. ${L.comprador_nome} foi avisado.` : "Imagem removida.");
+        await carregar(); ver(); }
+      catch(e){ toast(e.message, {err:1}); }
+    }});
   }
   function adicionar(){
     const novos = [];
@@ -438,7 +645,7 @@ async function telaListaCliente(token){
         <button class="btn ghost" id="cancel">Cancelar</button>
         <button class="btn" id="enviar">Enviar (<span id="cnt">0</span>)</button>
       </div></div>`;
-    itemEditor($("#ed-itens"), novos, () => $("#cnt").textContent = novos.length);
+    itemEditor($("#ed-itens"), novos, () => $("#cnt").textContent = novos.length, {modelo: L.modelo});
     $("#cancel").onclick = ver;
     $("#enviar").onclick = async () => {
       if(!novos.length){ toast("Adicione pelo menos uma peça", {err:1}); return; }
@@ -453,7 +660,7 @@ async function telaListaCliente(token){
   ver();
   // atualiza status automaticamente enquanto a página está aberta
   setInterval(async () => {
-    if(document.hidden || $("#ed-itens")) return;
+    if(document.hidden || $("#ed-itens") || document.querySelector(".ov,.sheet")) return;
     try{ const old = JSON.stringify(L); await carregar(); if(JSON.stringify(L) !== old) ver(); }catch(e){}
   }, 30000);
 }
@@ -487,8 +694,10 @@ function relatorio(L, {cliente, el, token, acoes}){
   const g = s => L.itens.filter(i => i.status === s);
   const c = L.itens.filter(FEITO), x = g("indisponivel"), p = g("pendente"), pa = g("parcial");
   const ck = store.get("sc_conferido_" + token, {});
+  const temImg = L.itens.some(i => i.imagem);
   const linhas = (arr, conf) => `<table>${arr.map(i => `<tr>
       ${conf ? `<td class="ck no-print"><input type="checkbox" data-id="${i.id}" ${ck[i.id]?"checked":""} aria-label="Recebido"></td>` : ""}
+      ${temImg ? `<td class="im">${thumbHtml(i)}</td>` : ""}
       <td>${nomePeca(i)}${i.adicional?`<span class="tag">adicionada</span>`:""}${i.observacao?`<div class="obs">📝 ${esc(i.observacao)}</div>`:""}${i.substituto?`<div class="obs" style="color:var(--pri)">↪ Alternativa: ${esc(i.substituto)}</div>`:""}</td>
       <td class="qt">${i.status==="parcial"?`<span style="color:var(--warn)">${esc(qtdComprTxt(i))}</span>`:esc(qtdTxt(i))}</td></tr>`).join("")}</table>`;
   el.innerHTML = `
@@ -514,6 +723,7 @@ function relatorio(L, {cliente, el, token, acoes}){
       </div>
     </div>`;
   el.querySelector("#pdf").onclick = () => print();
+  ligarImagens(el, L.itens);
   const upd = () => { const s = el.querySelector("#confcnt"); if(s){ const n = c.filter(i=>ck[i.id]).length; s.textContent = `(${n} de ${c.length} conferidos)`; } };
   upd();
   el.querySelectorAll("input[type=checkbox][data-id]").forEach(b => b.onchange = () => { ck[b.dataset.id] = b.checked; store.set("sc_conferido_" + token, ck); upd(); });
@@ -596,6 +806,7 @@ function iniciarPoll(){
     await atualizarPainel(true);
     if(JSON.stringify(PAINEL) === antes) return;
     topComprador();
+    if(document.querySelector(".ov,.sheet")) return;
     const h = location.hash.slice(1);
     if((h === "" && document.activeElement?.id !== "busca") || h === "alertas") rotear(true);
     else if(h.startsWith("lista/")){
@@ -735,7 +946,7 @@ async function telaAlertas(){
   app.innerHTML = `
     <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
       <h2 style="margin:0">Alertas</h2>${A.length ? `<button class="btn ghost" id="lidos">Marcar todos como lidos</button>` : ""}</div>
-      <div class="alertlist" style="margin-top:8px">${A.length ? A.map(a => `<div class="a" data-l="${a.lista_id}"><div>${a.tipo==="itens_adicionados"?"➕":"📝"} ${esc(a.mensagem)}</div>
+      <div class="alertlist" style="margin-top:8px">${A.length ? A.map(a => `<div class="a" data-l="${a.lista_id}"><div>${a.tipo==="itens_adicionados"?"➕":a.tipo==="imagem"?"📷":"📝"} ${esc(a.mensagem)}</div>
         <div class="muted small">${fmtHora(a.criado_em)}</div></div>`).join("") : `<div class="empty">Nenhum alerta novo.</div>`}</div>
     </div>`;
   app.querySelectorAll("[data-l]").forEach(c => c.onclick = () => location.hash = "lista/" + c.dataset.l);
@@ -775,6 +986,7 @@ async function telaListaComprador(id, modoRel){
     const t = L.itens.length, c = L.itens.filter(FEITO).length, x = L.itens.filter(i=>i.status==="indisponivel").length;
     const itens = ocultarFeitos ? L.itens.filter(i => i.status==="pendente") : L.itens;
     const wa = foneWa(L.telefone);
+    const aConferir = L.itens.filter(i => i.imagem && i.imagem_ok == null).length;
     app.innerHTML = `
       <p style="margin:4px 0"><a href="#">← Orçamentos</a></p>
       <div class="card">
@@ -792,9 +1004,10 @@ async function telaListaComprador(id, modoRel){
           <h3 style="margin:0">Peças</h3>
           <label class="chk" style="margin:0;font-weight:500"><input type="checkbox" id="oc" ${ocultarFeitos?"checked":""}> Só pendentes</label></div>
         <p class="small muted" style="margin:4px 0 0">✓ tem · ✕ não tem. Toque de novo para desfazer.</p>
-        <div style="margin-top:4px">${itens.length ? itens.map(i => `<div class="item ${i.status}" data-i="${i.id}"><div class="info">
+        ${aConferir ? `<p class="small" style="margin:4px 0 0;color:var(--warn)">📷 ${aConferir} ${aConferir===1?"imagem para conferir":"imagens para conferir"}: toque na foto e confirme se é a peça descrita.</p>` : ""}
+        <div style="margin-top:4px" id="pecas">${itens.length ? itens.map(i => `<div class="item ${i.status}" data-i="${i.id}">${thumbHtml(i, {add:true, selo:true})}<div class="info">
             <div class="p">${nomePeca(i)}${i.adicional?`<span class="tag">adicionada depois</span>`:""}</div>
-            <div class="q">${esc(qtdTxt(i))}${i.status==="indisponivel"?` · <span style="color:var(--bad)">não tem</span>`:""}</div>${detalheItem(i)}
+            <div class="q">${esc(qtdTxt(i))}${i.status==="indisponivel"?` · <span style="color:var(--bad)">não tem</span>`:""}</div>${detalheItem(i)}${avisoImagem(i, true)}
             ${i.status==="indisponivel" && !i.substituto ? `<a href="#" class="small" data-subst="${i.id}">+ informar alternativa</a>` : ""}</div>
             <button class="ib ${i.status==="indisponivel"?"on-bad":""}" data-s="indisponivel" title="Não tem" aria-label="Não tem">✕</button>
             <button class="ib ${i.status==="comprado"||i.status==="parcial"?"on-ok":""}" data-s="comprado" title="Tem" aria-label="Tem">✓</button>
@@ -822,6 +1035,19 @@ async function telaListaComprador(id, modoRel){
       if(it.status === s || (s === "comprado" && it.status === "parcial")){ return salvarItem(it, "pendente"); }
       salvarItem(it, s, null, s === "indisponivel" ? null : it.substituto);
     });
+    ligarImagens($("#pecas"), L.itens, {modelo: L.modelo, selo: true,
+      conferir: async (it, ok) => {
+        const ant = it.imagem_ok; it.imagem_ok = ok; render();
+        try{ await rpc("sc_conferir_imagem", {p_chave: SESS.chave, p_item: it.id, p_ok: ok});
+          if(!ok) toast("Marcado como não confere. O mecânico vê o aviso no link dele; você também pode trocar a imagem.", {ms:7000}); }
+        catch(e){ it.imagem_ok = ant; render(); toast(e.message, {err:1}); }
+      },
+      trocar: async (it, u) => {
+        const ant = {imagem: it.imagem, imagem_ok: it.imagem_ok};
+        Object.assign(it, {imagem: u || null, imagem_ok: u ? true : null}); render();
+        try{ await rpc("sc_item_imagem", {p_chave: SESS.chave, p_item: it.id, p_url: u}); toast(u ? "Imagem salva e conferida." : "Imagem removida."); }
+        catch(e){ Object.assign(it, ant); render(); toast(e.message, {err:1}); }
+      }});
     app.querySelectorAll("[data-subst]").forEach(a => a.onclick = e => { e.preventDefault(); aberto = {id: a.dataset.subst, modo: "indisponivel"}; render(); });
     const fi = app.querySelector("#fi-form");
     if(fi){
