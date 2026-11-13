@@ -1,6 +1,6 @@
 // Smart Compras: cache simples para abrir rápido e funcionar como app instalado.
 // Dados (Supabase) sempre vêm da rede.
-const CACHE = "sc-v4";
+const CACHE = "sc-v5";
 const ARQS = ["./", "index.html", "manifest.webmanifest", "img/icon-32.png", "img/icon-192.png", "img/icon-512.png", "img/fundo-m.jpg"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARQS)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {
